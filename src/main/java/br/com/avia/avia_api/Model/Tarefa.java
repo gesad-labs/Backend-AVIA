@@ -16,10 +16,10 @@ public class Tarefa {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
-    @Getter  private int id;
+    @Getter  private long id;
 
     @Column(name = "sprint_id")
-    @Getter  @Setter private int sprint_id;
+    @Getter  @Setter private long sprintId;
 
     @Column(name = "titulo")
     @Getter  @Setter private String titulo;
@@ -31,7 +31,7 @@ public class Tarefa {
     @Getter  @Setter private String status;
 
     @Column(name = "tarefa_parente_id")
-    @Getter  @Setter private int tarefa_parente_id;
+    @Getter  @Setter private int tarefaParenteId;
 
     @Column(name = "impedimento")
     @Getter  @Setter private boolean impedimento;
@@ -39,13 +39,13 @@ public class Tarefa {
     public Tarefa() {
     }
 
-    public Tarefa(int sprint_id, String titulo, int estimativa, String status, int tarefa_parente_id,
+    public Tarefa(long sprintId, String titulo, int estimativa, String status, int tarefaParenteId,
             boolean impedimento) {
-        this.sprint_id = sprint_id;
+        this.sprintId = sprintId;
         this.titulo = titulo;
         this.estimativa = estimativa;
         this.status = status;
-        this.tarefa_parente_id = tarefa_parente_id;
+        this.tarefaParenteId = tarefaParenteId;
         this.impedimento = impedimento;
     }
 

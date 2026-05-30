@@ -16,20 +16,20 @@ public class Projeto {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
-    @Getter  private int id;
+    @Getter  private long id;
 
     @Column(name = "nome")
     @Getter  @Setter  private String nome;
 
     @Column(name = "tipo_estimativa")
-    @Getter  @Setter  private String tipo_estimativa;
+    @Getter  @Setter  private String tipoEstimativa;
 
     public Projeto() {
     }
 
-    public Projeto(String nome, String tipo_estimativa) {
+    public Projeto(String nome, String tipoEstimativa) {
         this.nome = nome;
-        this.tipo_estimativa = tipo_estimativa;
+        this.tipoEstimativa = tipoEstimativa;
     }
 
 }

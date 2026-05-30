@@ -16,10 +16,10 @@ public class Sprint {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
-    @Getter  private int id;
+    @Getter  private long id;
 
     @Column(name = "projeto_id")
-    @Getter @Setter private int projeto_id;
+    @Getter @Setter private long projetoId;
 
     @Column(name = "nome")
     @Getter @Setter private String nome;
@@ -30,8 +30,8 @@ public class Sprint {
     public Sprint() {
     }
 
-    public Sprint(int projeto_id, String nome, String status) {
-        this.projeto_id = projeto_id;
+    public Sprint(long projetoId, String nome, String status) {
+        this.projetoId = projetoId;
         this.nome = nome;
         this.status = status;
     }
