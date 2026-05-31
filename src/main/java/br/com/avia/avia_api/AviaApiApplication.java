@@ -4,7 +4,8 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-public class AviaApiApplication {
+public class
+AviaApiApplication {
 
 	public static void main(String[] args) {
 		SpringApplication.run(AviaApiApplication.class, args);

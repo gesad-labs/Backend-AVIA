@@ -1,4 +1,4 @@
-package br.com.avia.avia_api.Model;
+package br.com.avia.avia_api.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

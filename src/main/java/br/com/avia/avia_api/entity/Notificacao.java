@@ -1,4 +1,4 @@
-package br.com.avia.avia_api.Model;
+package br.com.avia.avia_api.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -10,29 +10,30 @@ import lombok.Getter;
 import lombok.Setter;
 
 @Entity
-@Table(name = "comentarios")
-public class Comentario {
+@Table(name = "notificacoes")
+public class Notificacao {
     
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
-    @Getter private int id;
+    @Getter private long id;
 
     @Column(name = "tarefa_id")
     @Getter @Setter private long tarefaId;
 
-    @Column(name = "descricao")
-    @Getter @Setter private String descricao;
+    @Column(name = "tipo")
+    @Getter @Setter private String tipo;
 
-    @Column(name = "projeto_usuario_id")
-    @Getter @Setter private int projetoUsuarioId;
+    @Column(name = "comentario_id")
+    @Getter @Setter private int comentarioId;
 
-    public Comentario() {
+    public Notificacao() {
     }
 
-    public Comentario(long tarefaId, String descricao, int projetoUsuarioId) {
+    public Notificacao(long tarefaId, String tipo, int comentarioId) {
         this.tarefaId = tarefaId;
-        this.descricao = descricao;
-        this.projetoUsuarioId = projetoUsuarioId;
+        this.tipo = tipo;
+        this.comentarioId = comentarioId;
     }
+    
 }

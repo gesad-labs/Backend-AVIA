@@ -1,4 +1,4 @@
-package br.com.avia.avia_api.Model;
+package br.com.avia.avia_api.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -7,24 +7,24 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.Getter;
+import lombok.Setter;
 
 @Entity
-@Table(name = "permissoes")
-public class Permissao {
+@Table(name = "papeis")
+public class Papel {
     
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
-    @Getter private int id;
+    @Getter private long id;
+    
+    @Column(name = "nome")
+    @Getter @Setter private String nome;
 
-    @Column(name = "descricao")
-    @Getter private String descricao;
-
-    public Permissao() {
+    public Papel() {
     }
 
-    public Permissao(String descricao) {
-        this.descricao = descricao;
+    public Papel(String nome) {
+        this.nome = nome;
     }
-
 }

@@ -1,4 +1,4 @@
-package br.com.avia.avia_api.Model;
+package br.com.avia.avia_api.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -10,29 +10,26 @@ import lombok.Getter;
 import lombok.Setter;
 
 @Entity
-@Table(name = "sprints")
-public class Sprint {
-    
+@Table(name = "projetos")
+public class Projeto {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
     @Getter  private long id;
 
-    @Column(name = "projeto_id")
-    @Getter @Setter private long projetoId;
-
     @Column(name = "nome")
-    @Getter @Setter private String nome;
+    @Getter  @Setter  private String nome;
 
-    @Column(name = "status")
-    @Getter @Setter private String status;
+    @Column(name = "tipo_estimativa")
+    @Getter  @Setter  private String tipoEstimativa;
 
-    public Sprint() {
+    public Projeto() {
     }
 
-    public Sprint(long projetoId, String nome, String status) {
-        this.projetoId = projetoId;
+    public Projeto(String nome, String tipoEstimativa) {
         this.nome = nome;
-        this.status = status;
+        this.tipoEstimativa = tipoEstimativa;
     }
+
 }
