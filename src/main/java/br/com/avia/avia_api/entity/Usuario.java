@@ -6,29 +6,32 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import lombok.AccessLevel;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
 @Table(name="usuarios")
+@Setter
+@Getter
+@NoArgsConstructor
 public class Usuario {
     
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
-    @Getter  private long id;
+    @Setter(AccessLevel.NONE)
+    private long id;
 
     @Column(name = "nome")
-    @Getter  @Setter  private String nome;
+    private String nome;
 
     @Column(name = "email")
-    @Getter  @Setter  private String email;
+    private String email;
 
     @Column(name = "senha")
-    @Getter  @Setter  private String senha;
-    
-    public Usuario() {
-    }
+    private String senha;
 
     public Usuario(String nome, String email, String senha) {
         this.nome = nome;
