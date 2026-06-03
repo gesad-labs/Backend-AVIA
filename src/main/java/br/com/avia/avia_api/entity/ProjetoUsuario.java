@@ -1,42 +1,41 @@
 package br.com.avia.avia_api.entity;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
+import lombok.AccessLevel;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
 @Table(name = "projeto_usuario")
+@Getter
+@Setter
+@NoArgsConstructor
 public class ProjetoUsuario {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
-    @Getter private long id;
+    @Setter(AccessLevel.NONE)
+    private long id;
 
-    @Column(name = "usuario_id")
-    @Getter @Setter private long usuarioId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "usuario_id", nullable = false)
+    private Usuario usuario;
 
-    @Column(name = "projeto_id")
-    @Getter @Setter private long projetoId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "projeto_id", nullable = false)
+    private Projeto projeto;
 
     @Column(name = "cargo")
-    @Getter @Setter private String cargo;
+    private String cargo;
 
     @Column(name = "papel_id")
-    @Getter @Setter private int papelId;
+    private int papelId;
 
-    public ProjetoUsuario() {
-    }
-
-    public ProjetoUsuario(long usuarioId, long projetoId, String cargo, int papelId) {
-        this.usuarioId = usuarioId;
-        this.projetoId = projetoId;
+    public ProjetoUsuario(String cargo, Usuario usuario, Projeto projeto) {
         this.cargo = cargo;
-        this.papelId = papelId;
+        this.usuario = usuario;
+        this.projeto = projeto;
     }
 }
