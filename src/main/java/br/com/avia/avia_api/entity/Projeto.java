@@ -28,17 +28,13 @@ public class Projeto {
     @Column(name = "tipo_estimativa")
     private String tipoEstimativa;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "gerente_id", nullable = false)
-    private Usuario gerente;
-
     @OneToMany(mappedBy = "projeto", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ProjetoUsuario> membros = new ArrayList<>();
 
-    public Projeto(String nome, String tipoEstimativa, Usuario gerente) {
+    public Projeto(String nome, String tipoEstimativa, List<ProjetoUsuario> membros) {
         this.nome = nome;
         this.tipoEstimativa = tipoEstimativa;
-        this.gerente = gerente;
+        this.membros = membros;
     }
 
 }

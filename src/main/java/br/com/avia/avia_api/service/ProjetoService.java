@@ -32,13 +32,12 @@ public class ProjetoService {
         Projeto projeto = new Projeto();
         projeto.setNome(dto.nome());
         projeto.setTipoEstimativa(dto.tipoEstimativa());
-        projeto.setGerente(usuarioLogado);
 
+        // O criador do projeto é definido aqui dinamicamente pelo cargo na tabela intermediária
         ProjetoUsuario vinculoGerente = new ProjetoUsuario("gerente", usuarioLogado, projeto);
         projeto.getMembros().add(vinculoGerente);
 
         Projeto projetoSalvo = projetoRepository.save(projeto);
-
         return converterParaDTO(projetoSalvo);
     }
 
@@ -47,6 +46,7 @@ public class ProjetoService {
         Projeto projeto = projetoRepository.findById(projetoId)
                 .orElseThrow(() -> new RuntimeException("Projeto não encontrado."));
 
+        // Regra: Deve ser membro (qualquer cargo) para poder visualizar
         boolean isMembro = projeto.getMembros().stream()
                 .anyMatch(pu -> pu.getUsuario().getId() == usuarioLogado.getId());
 
@@ -72,8 +72,9 @@ public class ProjetoService {
         Projeto projeto = projetoRepository.findById(projetoId)
                 .orElseThrow(() -> new RuntimeException("Projeto não encontrado."));
 
-        if (projeto.getGerente().getId() != usuarioLogado.getId()) {
-            throw new RuntimeException("Apenas o criador pode deletar este projeto.");
+        // Regra Nova: Valida se o usuário tem o cargo de "gerente" neste projeto específico
+        if (!validarSeEhGerente(projeto, usuarioLogado.getId())) {
+            throw new RuntimeException("Apenas o gerente do projeto pode deletá-lo.");
         }
 
         projetoRepository.delete(projeto);
@@ -85,25 +86,27 @@ public class ProjetoService {
         Projeto projeto = projetoRepository.findById(projetoId)
                 .orElseThrow(() -> new RuntimeException("Projeto não encontrado."));
 
-        if (projeto.getGerente().getId() != usuarioLogado.getId()) {
-            throw new RuntimeException("Apenas o criador pode atualizar os dados deste projeto.");
+        // Regra Nova: Valida se o usuário tem o cargo de "gerente" neste projeto específico
+        if (!validarSeEhGerente(projeto, usuarioLogado.getId())) {
+            throw new RuntimeException("Apenas o gerente do projeto pode atualizar seus dados.");
         }
 
         if (dto.nome() != null && !dto.nome().isBlank()) {
             projeto.setNome(dto.nome());
         }
 
-        if (dto.tipoEstimativa() != null && !dto.tipoEstimativa().isBlank()) {
-            projeto.setTipoEstimativa(dto.tipoEstimativa());
-        }
-
         Projeto projetoAtualizado = projetoRepository.save(projeto);
         return converterParaDTO(projetoAtualizado);
     }
 
+    private boolean validarSeEhGerente(Projeto projeto, long usuarioId) {
+        return projeto.getMembros().stream()
+                .anyMatch(pu -> pu.getUsuario().getId() == usuarioId && "gerente".equalsIgnoreCase(pu.getCargo()));
+    }
+
     private Usuario buscarUsuarioPorEmail(String email) {
         return usuarioRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("Usuário autenticado não encontrado na base de dados."));
+                .orElseThrow(() -> new RuntimeException("Usuário autenticado não encontrado."));
     }
 
     private ProjetoResponseDTO converterParaDTO(Projeto projeto) {
