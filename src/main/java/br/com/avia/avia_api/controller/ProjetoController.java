@@ -3,6 +3,7 @@ package br.com.avia.avia_api.controller;
 import br.com.avia.avia_api.dto.projeto.AtualizarProjetoRequestDTO;
 import br.com.avia.avia_api.dto.projeto.CriarProjetoRequestDTO;
 import br.com.avia.avia_api.dto.projeto.ProjetoResponseDTO;
+import br.com.avia.avia_api.dto.usuario.UsuarioResponse;
 import br.com.avia.avia_api.service.ProjetoService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -61,5 +62,13 @@ public class ProjetoController {
         String emailUsuario = jwt.getSubject();
         ProjetoResponseDTO projetoAtualizado = projetoService.editarInformacoesDoProjeto(id, dto, emailUsuario);
         return ResponseEntity.ok(projetoAtualizado);
+    }
+
+    @GetMapping("/{id}/membros")
+    public ResponseEntity<List<UsuarioResponse>> verMembros(@PathVariable Long id,
+                                                            @AuthenticationPrincipal Jwt jwt){
+        String emailUsuario = jwt.getSubject();
+        List<UsuarioResponse> membros = projetoService.listarMembrosDoProjeto(id, emailUsuario);
+        return ResponseEntity.ok(membros);
     }
 }

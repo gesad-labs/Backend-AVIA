@@ -6,7 +6,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -28,13 +27,9 @@ public class Projeto {
     @Column(name = "tipo_estimativa")
     private String tipoEstimativa;
 
-    @OneToMany(mappedBy = "projeto", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<ProjetoUsuario> membros = new ArrayList<>();
-
     public Projeto(String nome, String tipoEstimativa, List<ProjetoUsuario> membros) {
         this.nome = nome;
         this.tipoEstimativa = tipoEstimativa;
-        this.membros = membros;
     }
 
 }
