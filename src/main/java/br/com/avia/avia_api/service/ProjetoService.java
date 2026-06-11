@@ -1,8 +1,6 @@
 package br.com.avia.avia_api.service;
 
-import br.com.avia.avia_api.dto.projeto.AtualizarProjetoRequestDTO;
-import br.com.avia.avia_api.dto.projeto.CriarProjetoRequestDTO;
-import br.com.avia.avia_api.dto.projeto.ProjetoResponseDTO;
+import br.com.avia.avia_api.dto.projeto.*;
 import br.com.avia.avia_api.dto.usuario.UsuarioResponse;
 import br.com.avia.avia_api.entity.Projeto;
 import br.com.avia.avia_api.entity.ProjetoUsuario;
@@ -124,13 +122,71 @@ public class ProjetoService {
         return converterParaDTO(projetoAtualizado);
     }
 
+    public List<UsuarioResponse> adicionarMembroAoProjeto(Long id, AdicionarMembroProjetoRequestDTO dto,
+                                         String emailGerente){
+        Usuario gerente = buscarUsuarioPorEmail(emailGerente);
+
+        validarPermissaoGerente(id, gerente.getId());
+
+        Usuario novoMembro = buscarUsuarioPorEmail(dto.emailUsuario());
+
+        Projeto projeto = projetoRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Projeto não encontrado."));
+
+        boolean jaEhMembro = projetoUsuarioRepository.existsByProjetoIdAndUsuarioId(id, novoMembro.getId());
+        if (jaEhMembro)
+            throw new RuntimeException("Este usuário já é membro do projeto.");
+
+        ProjetoUsuario pu = new ProjetoUsuario(dto.cargo(), novoMembro, projeto);
+        projetoUsuarioRepository.save(pu);
+
+        List<Usuario> membros = projetoUsuarioRepository.findMembrosByProjetoId(id);
+
+        return membros.stream()
+                .map(usuario -> new UsuarioResponse(
+                        usuario.getId(),
+                        usuario.getNome(),
+                        usuario.getEmail()
+                ))
+                .collect(Collectors.toList());
+    }
+
+    public List<UsuarioResponse> removerMembroDoProjeto(Long id, RemoverMembroRequestDTO dto,
+                                                        String emailGerente){
+
+        Usuario gerente = buscarUsuarioPorEmail(emailGerente);
+
+        validarPermissaoGerente(id, gerente.getId());
+
+        Usuario membro = buscarUsuarioPorEmail(dto.emailMembro());
+
+        projetoRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Projeto não encontrado."));
+
+        boolean ehMembro = projetoUsuarioRepository.existsByProjetoIdAndUsuarioId(id, membro.getId());
+        if (!ehMembro)
+            throw new RuntimeException("Este usuário não é membro do projeto.");
+
+        projetoUsuarioRepository.deleteByUsuarioId(membro.getId());
+
+        List<Usuario> membros = projetoUsuarioRepository.findMembrosByProjetoId(id);
+
+        return membros.stream()
+                .map(usuario -> new UsuarioResponse(
+                        usuario.getId(),
+                        usuario.getNome(),
+                        usuario.getEmail()
+                ))
+                .collect(Collectors.toList());
+    }
+
     private void validarPermissaoGerente(Long projetoId, Long usuarioId) {
 
         List<Projeto> projetosDoUsuario = projetoUsuarioRepository.findProjetosByMembroId(usuarioId);
         boolean ehMembro = projetosDoUsuario.stream().anyMatch(p -> p.getId() == projetoId);
 
         if (!ehMembro) {
-            throw new RuntimeException("Acesso negado ou você não é o gerente deste projeto.");
+            throw new RuntimeException("Acesso negado ou você não é gerente deste projeto.");
         }
 
     }

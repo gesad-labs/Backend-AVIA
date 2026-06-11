@@ -24,4 +24,11 @@ public interface ProjetoUsuarioRepository extends JpaRepository<ProjetoUsuario, 
     @Transactional
     @Query("DELETE FROM ProjetoUsuario pu WHERE pu.projeto.id = :projetoId")
     void deleteByProjetoId(@Param("projetoId") Long projetoId);
+
+    @Modifying
+    @Transactional
+    @Query("DELETE FROM ProjetoUsuario pu WHERE pu.usuario.id = :usuarioId")
+    void deleteByUsuarioId(@Param("usuarioId") Long usuarioId);
+
+    boolean existsByProjetoIdAndUsuarioId(Long projetoId, Long usuarioId);
 }

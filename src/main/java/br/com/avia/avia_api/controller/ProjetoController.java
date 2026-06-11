@@ -1,8 +1,6 @@
 package br.com.avia.avia_api.controller;
 
-import br.com.avia.avia_api.dto.projeto.AtualizarProjetoRequestDTO;
-import br.com.avia.avia_api.dto.projeto.CriarProjetoRequestDTO;
-import br.com.avia.avia_api.dto.projeto.ProjetoResponseDTO;
+import br.com.avia.avia_api.dto.projeto.*;
 import br.com.avia.avia_api.dto.usuario.UsuarioResponse;
 import br.com.avia.avia_api.service.ProjetoService;
 import jakarta.validation.Valid;
@@ -69,6 +67,26 @@ public class ProjetoController {
                                                             @AuthenticationPrincipal Jwt jwt){
         String emailUsuario = jwt.getSubject();
         List<UsuarioResponse> membros = projetoService.listarMembrosDoProjeto(id, emailUsuario);
+        return ResponseEntity.ok(membros);
+    }
+
+    @PostMapping("/{id}/membros")
+    public ResponseEntity<List<UsuarioResponse>> adicionarNovoMembro(@PathVariable Long id,
+                                    @RequestBody @Valid AdicionarMembroProjetoRequestDTO dto,
+                                    @AuthenticationPrincipal Jwt jwt){
+        String emailGerente = jwt.getSubject();
+        List<UsuarioResponse> membros = projetoService.adicionarMembroAoProjeto(id, dto,
+                emailGerente);
+        return ResponseEntity.ok(membros);
+    }
+
+    @DeleteMapping("/{id}/membros")
+    public ResponseEntity<List<UsuarioResponse>> removerMembro(@PathVariable Long id,
+                                                               @RequestBody @Valid RemoverMembroRequestDTO dto,
+                                                               @AuthenticationPrincipal Jwt jwt){
+
+        String emailGerente = jwt.getSubject();
+        List<UsuarioResponse> membros = projetoService.removerMembroDoProjeto(id, dto, emailGerente);
         return ResponseEntity.ok(membros);
     }
 }
