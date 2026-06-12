@@ -1,7 +1,6 @@
 package br.com.avia.avia_api.controller;
 
 import br.com.avia.avia_api.dto.projeto.*;
-import br.com.avia.avia_api.dto.usuario.UsuarioResponse;
 import br.com.avia.avia_api.service.ProjetoService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -11,6 +10,7 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/projetos")
@@ -63,30 +63,34 @@ public class ProjetoController {
     }
 
     @GetMapping("/{id}/membros")
-    public ResponseEntity<List<UsuarioResponse>> verMembros(@PathVariable Long id,
+    public ResponseEntity<List<MembroResponseDTO>> verMembros(@PathVariable Long id,
                                                             @AuthenticationPrincipal Jwt jwt){
         String emailUsuario = jwt.getSubject();
-        List<UsuarioResponse> membros = projetoService.listarMembrosDoProjeto(id, emailUsuario);
+        List<MembroResponseDTO> membros = projetoService.listarMembrosDoProjeto(id, emailUsuario);
         return ResponseEntity.ok(membros);
     }
 
     @PostMapping("/{id}/membros")
-    public ResponseEntity<List<UsuarioResponse>> adicionarNovoMembro(@PathVariable Long id,
-                                    @RequestBody @Valid AdicionarMembroProjetoRequestDTO dto,
-                                    @AuthenticationPrincipal Jwt jwt){
+    public ResponseEntity<Map<String, String>> adicionarNovoMembro(@PathVariable Long id,
+                                                                   @RequestBody @Valid AdicionarMembroProjetoRequestDTO dto,
+                                                                   @AuthenticationPrincipal Jwt jwt){
         String emailGerente = jwt.getSubject();
-        List<UsuarioResponse> membros = projetoService.adicionarMembroAoProjeto(id, dto,
+        projetoService.adicionarMembroAoProjeto(id, dto,
                 emailGerente);
-        return ResponseEntity.ok(membros);
+        Map<String, String> resposta = Map.of("mensagem", "Membro adicionado com sucesso");
+
+        return new ResponseEntity<>(resposta, HttpStatus.CREATED);
     }
 
     @DeleteMapping("/{id}/membros")
-    public ResponseEntity<List<UsuarioResponse>> removerMembro(@PathVariable Long id,
+    public ResponseEntity<Map<String, String>> removerMembro(@PathVariable Long id,
                                                                @RequestBody @Valid RemoverMembroRequestDTO dto,
                                                                @AuthenticationPrincipal Jwt jwt){
 
         String emailGerente = jwt.getSubject();
-        List<UsuarioResponse> membros = projetoService.removerMembroDoProjeto(id, dto, emailGerente);
-        return ResponseEntity.ok(membros);
+        String nomeMembro = projetoService.removerMembroDoProjeto(id, dto, emailGerente);
+        Map<String, String> resposta = Map.of("mensagem", nomeMembro + " foi removido(a)");
+
+        return new ResponseEntity<>(resposta, HttpStatus.CREATED);
     }
 }

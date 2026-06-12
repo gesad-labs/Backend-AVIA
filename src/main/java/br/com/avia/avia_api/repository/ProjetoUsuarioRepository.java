@@ -17,8 +17,8 @@ public interface ProjetoUsuarioRepository extends JpaRepository<ProjetoUsuario, 
     List<Projeto> findProjetosByMembroId(@Param("usuarioId") Long usuarioId);
 
     // Lista os membros de um projeto
-    @Query("SELECT pu.usuario FROM ProjetoUsuario pu WHERE pu.projeto.id = :projetoId")
-    List<Usuario> findMembrosByProjetoId(@Param("projetoId") Long projetoId);
+    @Query("SELECT pu FROM ProjetoUsuario pu JOIN FETCH pu.usuario WHERE pu.projeto.id = :projetoId")
+    List<ProjetoUsuario> findMembrosByProjetoId(@Param("projetoId") Long projetoId);
 
     @Modifying
     @Transactional

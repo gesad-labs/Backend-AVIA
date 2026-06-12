@@ -1,7 +1,6 @@
 package br.com.avia.avia_api.service;
 
 import br.com.avia.avia_api.dto.projeto.*;
-import br.com.avia.avia_api.dto.usuario.UsuarioResponse;
 import br.com.avia.avia_api.entity.Projeto;
 import br.com.avia.avia_api.entity.ProjetoUsuario;
 import br.com.avia.avia_api.entity.Usuario;
@@ -72,7 +71,7 @@ public class ProjetoService {
                 .collect(Collectors.toList());
     }
 
-    public List<UsuarioResponse> listarMembrosDoProjeto(long idProjeto, String emailUsuario) {
+    public List<MembroResponseDTO> listarMembrosDoProjeto(long idProjeto, String emailUsuario) {
         Usuario usuarioLogado = buscarUsuarioPorEmail(emailUsuario);
 
         List<Projeto> projetosDoUsuario = projetoUsuarioRepository.findProjetosByMembroId(usuarioLogado.getId());
@@ -82,13 +81,14 @@ public class ProjetoService {
             throw new RuntimeException("Você não tem permissão para visualizar os membros deste projeto.");
         }
 
-        List<Usuario> membros = projetoUsuarioRepository.findMembrosByProjetoId(idProjeto);
+        List<ProjetoUsuario> membros = projetoUsuarioRepository.findMembrosByProjetoId(idProjeto);
 
         return membros.stream()
-                .map(usuario -> new UsuarioResponse(
-                        usuario.getId(),
-                        usuario.getNome(),
-                        usuario.getEmail()
+                .map(membro -> new MembroResponseDTO(
+                        membro.getUsuario().getId(),
+                        membro.getUsuario().getNome(),
+                        membro.getUsuario().getEmail(),
+                        membro.getCargo()
                 ))
                 .collect(Collectors.toList());
     }
@@ -122,7 +122,7 @@ public class ProjetoService {
         return converterParaDTO(projetoAtualizado);
     }
 
-    public List<UsuarioResponse> adicionarMembroAoProjeto(Long id, AdicionarMembroProjetoRequestDTO dto,
+    public void adicionarMembroAoProjeto(Long id, AdicionarMembroProjetoRequestDTO dto,
                                          String emailGerente){
         Usuario gerente = buscarUsuarioPorEmail(emailGerente);
 
@@ -139,19 +139,9 @@ public class ProjetoService {
 
         ProjetoUsuario pu = new ProjetoUsuario(dto.cargo(), novoMembro, projeto);
         projetoUsuarioRepository.save(pu);
-
-        List<Usuario> membros = projetoUsuarioRepository.findMembrosByProjetoId(id);
-
-        return membros.stream()
-                .map(usuario -> new UsuarioResponse(
-                        usuario.getId(),
-                        usuario.getNome(),
-                        usuario.getEmail()
-                ))
-                .collect(Collectors.toList());
     }
 
-    public List<UsuarioResponse> removerMembroDoProjeto(Long id, RemoverMembroRequestDTO dto,
+    public String removerMembroDoProjeto(Long id, RemoverMembroRequestDTO dto,
                                                         String emailGerente){
 
         Usuario gerente = buscarUsuarioPorEmail(emailGerente);
@@ -169,15 +159,7 @@ public class ProjetoService {
 
         projetoUsuarioRepository.deleteByUsuarioId(membro.getId());
 
-        List<Usuario> membros = projetoUsuarioRepository.findMembrosByProjetoId(id);
-
-        return membros.stream()
-                .map(usuario -> new UsuarioResponse(
-                        usuario.getId(),
-                        usuario.getNome(),
-                        usuario.getEmail()
-                ))
-                .collect(Collectors.toList());
+        return membro.getNome();
     }
 
     private void validarPermissaoGerente(Long projetoId, Long usuarioId) {
