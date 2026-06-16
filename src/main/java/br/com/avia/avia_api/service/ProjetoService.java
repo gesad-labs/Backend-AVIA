@@ -1,9 +1,11 @@
 package br.com.avia.avia_api.service;
 
 import br.com.avia.avia_api.dto.projeto.*;
+import br.com.avia.avia_api.entity.Papel;
 import br.com.avia.avia_api.entity.Projeto;
 import br.com.avia.avia_api.entity.ProjetoUsuario;
 import br.com.avia.avia_api.entity.Usuario;
+import br.com.avia.avia_api.enums.CargoProjeto;
 import br.com.avia.avia_api.repository.ProjetoRepository;
 import br.com.avia.avia_api.repository.ProjetoUsuarioRepository;
 import br.com.avia.avia_api.repository.UsuarioRepository;
@@ -37,7 +39,10 @@ public class ProjetoService {
         projeto.setTipoEstimativa(dto.tipoEstimativa());
         Projeto projetoSalvo = projetoRepository.save(projeto);
 
-        ProjetoUsuario vinculoGerente = new ProjetoUsuario("gerente", usuarioLogado, projetoSalvo);
+        String cargoGerente = CargoProjeto.GERENTE.getNomeCargo();
+        Papel papel = projetoUsuarioRepository.findPapelIdByCargo(cargoGerente);
+
+        ProjetoUsuario vinculoGerente = new ProjetoUsuario(CargoProjeto.GERENTE, usuarioLogado, projetoSalvo, papel);
         projetoUsuarioRepository.save(vinculoGerente);
 
         return converterParaDTO(projetoSalvo);
@@ -137,7 +142,11 @@ public class ProjetoService {
         if (jaEhMembro)
             throw new RuntimeException("Este usuário já é membro do projeto.");
 
-        ProjetoUsuario pu = new ProjetoUsuario(dto.cargo(), novoMembro, projeto);
+        String nomeCargo = dto.cargo().getNomeCargo();
+
+        Papel papel = projetoUsuarioRepository.findPapelIdByCargo(nomeCargo);
+
+        ProjetoUsuario pu = new ProjetoUsuario(dto.cargo(), novoMembro, projeto, papel);
         projetoUsuarioRepository.save(pu);
     }
 
