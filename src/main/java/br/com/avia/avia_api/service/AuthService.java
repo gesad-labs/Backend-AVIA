@@ -23,19 +23,22 @@ public class AuthService {
     private final AuthenticationManager authenticationManager;
     private final TokenService tokenService;
     private final TokenRecuperacaoSenhaRepository tokenRecuperacaoSenhaRepository;
+    private final EmailService emailService;
 
     public AuthService(
             UsuarioRepository usuarioRepository,
             PasswordEncoder passwordEncoder,
             AuthenticationManager authenticationManager,
             TokenService tokenService,
-            TokenRecuperacaoSenhaRepository tokenRecuperacaoSenhaRepository
+            TokenRecuperacaoSenhaRepository tokenRecuperacaoSenhaRepository,
+            EmailService emailService
     ) {
         this.usuarioRepository = usuarioRepository;
         this.passwordEncoder = passwordEncoder;
         this.authenticationManager = authenticationManager;
         this.tokenService = tokenService;
         this.tokenRecuperacaoSenhaRepository = tokenRecuperacaoSenhaRepository;
+        this.emailService = emailService;
     }
 
     public UsuarioResponse cadastrar(CadastroRequestDTO request) {
@@ -96,12 +99,8 @@ public class AuthService {
 
         String link = "http://localhost:5173/redefinir-senha?token=" + token;
 
-        System.out.println("Link de recuperação de senha: " + link);
+        emailService.enviarRecuperacaoSenha(usuario.getEmail(), link);
 
-        /*
-         * Depois trocar esse System.out.println
-         * por um serviço real de envio de e-mail.
-         */
     }
 
     public void redefinirSenha(RedefinicaoSenhaRequestDTO request) {
