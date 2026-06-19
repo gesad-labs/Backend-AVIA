@@ -1,8 +1,7 @@
 package br.com.avia.avia_api.enums;
 
-import lombok.Getter;
+import com.fasterxml.jackson.annotation.JsonValue;
 
-@Getter
 public enum TipoEstimativaProjeto {
     HORAS ("Horas"),
     PONTOS ("Pontos");
@@ -12,4 +11,7 @@ public enum TipoEstimativaProjeto {
     TipoEstimativaProjeto(String tipoEstimativa) {
         this.tipoEstimativa = tipoEstimativa;
     }
+
+    @JsonValue
+    String getEstimativaProjeto(){return tipoEstimativa;}
 }

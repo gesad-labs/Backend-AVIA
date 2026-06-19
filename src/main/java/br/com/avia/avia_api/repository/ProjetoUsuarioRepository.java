@@ -31,7 +31,4 @@ public interface ProjetoUsuarioRepository extends JpaRepository<ProjetoUsuario, 
     void deleteByUsuarioId(@Param("usuarioId") Long usuarioId);
 
     boolean existsByProjetoIdAndUsuarioId(Long projetoId, Long usuarioId);
-
-    @Query("SELECT pu.papel FROM ProjetoUsuario pu WHERE pu.papel.nome = :cargo")
-    Papel findPapelIdByCargo(@Param("cargo") String cargo);
 }

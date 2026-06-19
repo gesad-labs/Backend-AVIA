@@ -1,9 +1,7 @@
 package br.com.avia.avia_api.enums;
 
 import com.fasterxml.jackson.annotation.JsonValue;
-import lombok.Getter;
 
-@Getter
 public enum CargoProjeto {
     GERENTE ("gerente"),
     PROJECTOWNER ("project owner"),

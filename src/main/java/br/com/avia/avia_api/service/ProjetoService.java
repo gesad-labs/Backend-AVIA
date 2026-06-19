@@ -6,6 +6,7 @@ import br.com.avia.avia_api.entity.Projeto;
 import br.com.avia.avia_api.entity.ProjetoUsuario;
 import br.com.avia.avia_api.entity.Usuario;
 import br.com.avia.avia_api.enums.CargoProjeto;
+import br.com.avia.avia_api.repository.PapelRepository;
 import br.com.avia.avia_api.repository.ProjetoRepository;
 import br.com.avia.avia_api.repository.ProjetoUsuarioRepository;
 import br.com.avia.avia_api.repository.UsuarioRepository;
@@ -21,13 +22,15 @@ public class ProjetoService {
     private final ProjetoRepository projetoRepository;
     private final UsuarioRepository usuarioRepository;
     private final ProjetoUsuarioRepository projetoUsuarioRepository;
+    private final PapelRepository papelRepository;
 
     public ProjetoService(ProjetoRepository projetoRepository,
                           UsuarioRepository usuarioRepository,
-                          ProjetoUsuarioRepository projetoUsuarioRepository) {
+                          ProjetoUsuarioRepository projetoUsuarioRepository, PapelRepository papelRepository) {
         this.projetoRepository = projetoRepository;
         this.usuarioRepository = usuarioRepository;
         this.projetoUsuarioRepository = projetoUsuarioRepository;
+        this.papelRepository = papelRepository;
     }
 
     @Transactional
@@ -40,7 +43,8 @@ public class ProjetoService {
         Projeto projetoSalvo = projetoRepository.save(projeto);
 
         String cargoGerente = CargoProjeto.GERENTE.getNomeCargo();
-        Papel papel = projetoUsuarioRepository.findPapelIdByCargo(cargoGerente);
+        Papel papel = papelRepository.findByNome(cargoGerente).
+                orElseThrow(() -> new RuntimeException("Cargo inexistente."));
 
         ProjetoUsuario vinculoGerente = new ProjetoUsuario(CargoProjeto.GERENTE, usuarioLogado, projetoSalvo, papel);
         projetoUsuarioRepository.save(vinculoGerente);
@@ -144,7 +148,8 @@ public class ProjetoService {
 
         String nomeCargo = dto.cargo().getNomeCargo();
 
-        Papel papel = projetoUsuarioRepository.findPapelIdByCargo(nomeCargo);
+        Papel papel = papelRepository.findByNome(nomeCargo).
+                orElseThrow(() -> new RuntimeException("Cargo inexistente."));
 
         ProjetoUsuario pu = new ProjetoUsuario(dto.cargo(), novoMembro, projeto, papel);
         projetoUsuarioRepository.save(pu);
