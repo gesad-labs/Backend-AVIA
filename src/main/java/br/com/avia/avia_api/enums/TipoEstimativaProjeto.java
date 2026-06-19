@@ -13,5 +13,15 @@ public enum TipoEstimativaProjeto {
     }
 
     @JsonValue
-    String getEstimativaProjeto(){return tipoEstimativa;}
+    public String getEstimativaProjeto(){return tipoEstimativa;}
+
+    public static TipoEstimativaProjeto deString(String valor) {
+        if (valor == null) return null;
+        for (TipoEstimativaProjeto tipo : TipoEstimativaProjeto.values()) {
+            if (tipo.getEstimativaProjeto().equalsIgnoreCase(valor)) {
+                return tipo;
+            }
+        }
+        throw new IllegalArgumentException("Tipo de estimativa desconhecido: " + valor);
+    }
 }

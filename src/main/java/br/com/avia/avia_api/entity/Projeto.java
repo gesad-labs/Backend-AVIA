@@ -23,8 +23,7 @@ public class Projeto {
     @Column(name = "nome")
     private String nome;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "tipo_estimativa")
+    @Column(name = "tipo_estimativa", nullable = false)
     private TipoEstimativaProjeto tipoEstimativa;
 
 }
