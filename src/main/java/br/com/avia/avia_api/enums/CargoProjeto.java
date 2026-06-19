@@ -3,10 +3,15 @@ package br.com.avia.avia_api.enums;
 import com.fasterxml.jackson.annotation.JsonValue;
 
 public enum CargoProjeto {
-    GERENTE ("gerente"),
-    PROJECTOWNER ("project owner"),
-    MEMBRO ("membro"),
-    VISUALIZADOR ("visualizador");
+    GERENTE ("Gerente"),
+    SCRUMMASTER ("Scrum Master"),
+    DESENVOLVEDOR ("Desenvolvedor"),
+    QA ("QA"),
+    ANALISTADEREQUISISTOS ("Analista de Requisistos"),
+    DESIGNERDEUIUX ("Designer de UI/UX"),
+    ARQUITETODESOFTWARE ("Arquiteto de Software"),
+    DEVOPS ("DevOps"),
+    VISUALIZADOR ("Visualizador");
 
     final String nomeCargo;
 
