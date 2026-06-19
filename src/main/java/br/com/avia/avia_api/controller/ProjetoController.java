@@ -130,4 +130,16 @@ public class ProjetoController {
         return ResponseEntity.ok(sprints);
     }
 
+    @PatchMapping("/{projeto_id}/sprints/{sprint_id}")
+    public ResponseEntity<SprintResponseDTO> editarSprint(
+            @PathVariable("projeto_id") Long projetoId,
+            @PathVariable("sprint_id") Long sprintId,
+            @RequestBody EditarSprintRequestDTO dto,
+            @AuthenticationPrincipal Jwt jwt
+    ) {
+        String emailUsuario = jwt.getSubject();
+        SprintResponseDTO sprint = sprintService.editarSprint(projetoId, sprintId, dto, emailUsuario);
+        return ResponseEntity.ok(sprint);
+    }
+
 }

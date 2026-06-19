@@ -68,6 +68,27 @@ public class SprintService {
                 .collect(Collectors.toList());
     }
 
+    @Transactional
+    public SprintResponseDTO editarSprint(Long projetoId, Long sprintId, EditarSprintRequestDTO dto, String emailUsuario) {
+        buscarUsuarioPorEmail(emailUsuario);
+
+        projetoRepository.findById(projetoId)
+                .orElseThrow(() -> new RuntimeException("Projeto não encontrado"));
+
+        Sprint sprint = sprintRepository.findById(sprintId)
+                .orElseThrow(() -> new RuntimeException("Sprint não encontrada"));
+
+        if (dto.nome() != null) sprint.setNome(dto.nome());
+        if (sprint.getProjetoId() != projetoId) {
+            throw new RuntimeException("Sprint não pertence a esse projeto");
+        }
+        if (dto.status() != null) sprint.setStatus(dto.status());
+
+        Sprint sprintAtualizada = sprintRepository.save(sprint);
+
+        return converterParaDTO(sprintAtualizada);
+    }
+
     private SprintResponseDTO converterParaDTO(Sprint sprint) {
         return new SprintResponseDTO(
                 sprint.getId(),
