@@ -1,12 +1,11 @@
 package br.com.avia.avia_api.entity;
 
+import br.com.avia.avia_api.enums.TipoEstimativaProjeto;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-
-import java.util.List;
 
 @Entity
 @Table(name = "projetos")
@@ -24,12 +23,7 @@ public class Projeto {
     @Column(name = "nome")
     private String nome;
 
-    @Column(name = "tipo_estimativa")
-    private String tipoEstimativa;
-
-    public Projeto(String nome, String tipoEstimativa, List<ProjetoUsuario> membros) {
-        this.nome = nome;
-        this.tipoEstimativa = tipoEstimativa;
-    }
+    @Column(name = "tipo_estimativa", nullable = false)
+    private TipoEstimativaProjeto tipoEstimativa;
 
 }

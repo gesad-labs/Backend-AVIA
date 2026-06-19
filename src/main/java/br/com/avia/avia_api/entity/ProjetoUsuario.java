@@ -1,5 +1,6 @@
 package br.com.avia.avia_api.entity;
 
+import br.com.avia.avia_api.enums.CargoProjeto;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -27,15 +28,17 @@ public class ProjetoUsuario {
     @JoinColumn(name = "projeto_id", nullable = false)
     private Projeto projeto;
 
-    @Column(name = "cargo")
-    private String cargo;
+    @Column(name = "cargo", nullable = false)
+    private CargoProjeto cargo;
 
-    @Column(name = "papel_id")
-    private int papelId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "papel_id")
+    private Papel papel;
 
-    public ProjetoUsuario(String cargo, Usuario usuario, Projeto projeto) {
+    public ProjetoUsuario(CargoProjeto cargo, Usuario usuario, Projeto projeto, Papel papel) {
         this.cargo = cargo;
         this.usuario = usuario;
         this.projeto = projeto;
+        this.papel = papel;
     }
 }
