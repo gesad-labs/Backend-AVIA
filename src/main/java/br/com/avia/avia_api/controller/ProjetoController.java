@@ -2,6 +2,8 @@ package br.com.avia.avia_api.controller;
 
 import br.com.avia.avia_api.dto.projeto.*;
 import br.com.avia.avia_api.dto.sprint.*;
+import br.com.avia.avia_api.dto.tarefa.*;
+import br.com.avia.avia_api.service.TarefaService;
 import br.com.avia.avia_api.service.ProjetoService;
 import br.com.avia.avia_api.service.SprintService;
 import jakarta.validation.Valid;
@@ -20,11 +22,12 @@ public class ProjetoController {
 
     private final ProjetoService projetoService;
     private final SprintService sprintService;
+    private final TarefaService tarefaService;
 
-    public ProjetoController(ProjetoService projetoService, SprintService sprintService) {
+    public ProjetoController(ProjetoService projetoService, SprintService sprintService, TarefaService tarefaService) {
         this.projetoService = projetoService;
         this.sprintService = sprintService;
-
+        this.tarefaService = tarefaService;
     }
 
     @PostMapping
@@ -142,4 +145,25 @@ public class ProjetoController {
         return ResponseEntity.ok(sprint);
     }
 
+    @PostMapping("/{projeto_id}/sprints/{sprint_id}/tarefas")
+    public ResponseEntity<TarefaResponseDTO> criarTarefa(
+            @PathVariable("projeto_id") Long projetoId,
+            @PathVariable("sprint_id") Long sprintId,
+            @RequestBody @Valid CriarTarefaRequestDTO dto,
+            @AuthenticationPrincipal Jwt jwt
+    ) {
+        TarefaResponseDTO tarefa = tarefaService.criarTarefa(projetoId, sprintId, dto);
+        return new ResponseEntity<>(tarefa, HttpStatus.CREATED);
+    }
+
+    @DeleteMapping("/{projeto_id}/sprints/{sprint_id}/tarefas/{tarefa_id}")
+    public ResponseEntity<Void> removerTarefaDaSprint(
+            @PathVariable("projeto_id") Long projetoId,
+            @PathVariable("sprint_id") Long sprintId,
+            @PathVariable("tarefa_id") Long tarefaId,
+            @AuthenticationPrincipal Jwt jwt
+    ) {
+        tarefaService.removerTarefaDaSprint(projetoId, sprintId, tarefaId);
+        return ResponseEntity.noContent().build();
+    }
 }
