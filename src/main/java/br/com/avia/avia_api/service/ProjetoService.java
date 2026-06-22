@@ -6,6 +6,7 @@ import br.com.avia.avia_api.entity.Projeto;
 import br.com.avia.avia_api.entity.ProjetoUsuario;
 import br.com.avia.avia_api.entity.Usuario;
 import br.com.avia.avia_api.enums.CargoProjeto;
+import br.com.avia.avia_api.enums.PapelProjeto;
 import br.com.avia.avia_api.repository.PapelRepository;
 import br.com.avia.avia_api.repository.ProjetoRepository;
 import br.com.avia.avia_api.repository.ProjetoUsuarioRepository;
@@ -42,9 +43,9 @@ public class ProjetoService {
         projeto.setTipoEstimativa(dto.tipoEstimativa());
         Projeto projetoSalvo = projetoRepository.save(projeto);
 
-        String cargoGerente = CargoProjeto.GERENTE.getNomeCargo();
-        Papel papel = papelRepository.findByNome(cargoGerente).
-                orElseThrow(() -> new RuntimeException("Cargo inexistente."));
+        String papelGerente = PapelProjeto.GERENTE.name();
+        Papel papel = papelRepository.findByNome(papelGerente).
+                orElseThrow(() -> new RuntimeException("Papel inexistente."));
 
         ProjetoUsuario vinculoGerente = new ProjetoUsuario(CargoProjeto.GERENTE, usuarioLogado, projetoSalvo, papel);
         projetoUsuarioRepository.save(vinculoGerente);
@@ -133,6 +134,12 @@ public class ProjetoService {
 
     public void adicionarMembroAoProjeto(Long id, AdicionarMembroProjetoRequestDTO dto,
                                          String emailGerente){
+        if (!dto.cargo().isAtribuivel())
+            throw new RuntimeException("Este cargo não pode ser atribuído manualmente.");
+
+        if (!dto.papel().isAtribuivel())
+            throw new RuntimeException("Este papel não pode ser atribuído manualmente.");
+
         Usuario gerente = buscarUsuarioPorEmail(emailGerente);
 
         validarPermissaoGerente(id, gerente.getId());
@@ -146,10 +153,10 @@ public class ProjetoService {
         if (jaEhMembro)
             throw new RuntimeException("Este usuário já é membro do projeto.");
 
-        String nomeCargo = dto.cargo().getNomeCargo();
+        String nomePapel = dto.papel().name();
 
-        Papel papel = papelRepository.findByNome(nomeCargo).
-                orElseThrow(() -> new RuntimeException("Cargo inexistente."));
+        Papel papel = papelRepository.findByNome(nomePapel).
+                orElseThrow(() -> new RuntimeException("Papel inexistente."));
 
         ProjetoUsuario pu = new ProjetoUsuario(dto.cargo(), novoMembro, projeto, papel);
         projetoUsuarioRepository.save(pu);
