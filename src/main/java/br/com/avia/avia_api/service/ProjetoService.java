@@ -24,14 +24,19 @@ public class ProjetoService {
     private final UsuarioRepository usuarioRepository;
     private final ProjetoUsuarioRepository projetoUsuarioRepository;
     private final PapelRepository papelRepository;
+    private final NotificacaoService notificacaoService;
 
     public ProjetoService(ProjetoRepository projetoRepository,
                           UsuarioRepository usuarioRepository,
-                          ProjetoUsuarioRepository projetoUsuarioRepository, PapelRepository papelRepository) {
+                          ProjetoUsuarioRepository projetoUsuarioRepository,
+                          PapelRepository papelRepository,
+                          NotificacaoService notificacaoService
+    ) {
         this.projetoRepository = projetoRepository;
         this.usuarioRepository = usuarioRepository;
         this.projetoUsuarioRepository = projetoUsuarioRepository;
         this.papelRepository = papelRepository;
+        this.notificacaoService = notificacaoService;
     }
 
     @Transactional
@@ -140,6 +145,12 @@ public class ProjetoService {
         if (!dto.papel().isAtribuivel())
             throw new RuntimeException("Este papel não pode ser atribuído manualmente.");
 
+    @Transactional
+    public void adicionarMembroAoProjeto(
+            Long id,
+            AdicionarMembroProjetoRequestDTO dto,
+            String emailGerente){
+
         Usuario gerente = buscarUsuarioPorEmail(emailGerente);
 
         validarPermissaoGerente(id, gerente.getId());
@@ -160,6 +171,8 @@ public class ProjetoService {
 
         ProjetoUsuario pu = new ProjetoUsuario(dto.cargo(), novoMembro, projeto, papel);
         projetoUsuarioRepository.save(pu);
+
+        notificacaoService.notificarUsuarioAdicionadoAoProjeto(pu);
     }
 
     public String removerMembroDoProjeto(Long id, RemoverMembroRequestDTO dto,
