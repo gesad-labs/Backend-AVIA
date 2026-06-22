@@ -1,39 +1,44 @@
 package br.com.avia.avia_api.entity;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import br.com.avia.avia_api.enums.TipoNotificacao;
+import jakarta.persistence.*;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
+
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "notificacoes")
+@Getter
+@Setter
+@NoArgsConstructor
 public class Notificacao {
     
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
-    @Getter private long id;
-
-    @Column(name = "tarefa_id")
-    @Getter @Setter private long tarefaId;
+    @Getter private Long id;
 
     @Column(name = "tipo")
-    @Getter @Setter private String tipo;
+    @Getter @Setter private TipoNotificacao tipo;
 
-    @Column(name = "comentario_id")
-    @Getter @Setter private int comentarioId;
+    @ManyToOne
+    @JoinColumn(name = "tarefa_id")
+    private Tarefa tarefa;
 
-    public Notificacao() {
-    }
+    @ManyToOne
+    @JoinColumn(name = "comentario_id")
+    private Comentario comentario;
 
-    public Notificacao(long tarefaId, String tipo, int comentarioId) {
-        this.tarefaId = tarefaId;
-        this.tipo = tipo;
-        this.comentarioId = comentarioId;
+    @Column(name = "criado_em", nullable = false)
+    private LocalDateTime criadoEm = LocalDateTime.now();
+
+    @PrePersist
+    public void prePersist() {
+        if (criadoEm == null) {
+            criadoEm = LocalDateTime.now();
+        }
     }
     
 }

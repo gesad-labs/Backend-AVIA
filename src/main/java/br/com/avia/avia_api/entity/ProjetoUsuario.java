@@ -28,6 +28,7 @@ public class ProjetoUsuario {
     @JoinColumn(name = "projeto_id", nullable = false)
     private Projeto projeto;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "cargo", nullable = false)
     private CargoProjeto cargo;
 

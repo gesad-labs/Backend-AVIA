@@ -1,5 +1,6 @@
 package br.com.avia.avia_api.enums;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
 
 public enum TipoEstimativaProjeto {
@@ -15,10 +16,11 @@ public enum TipoEstimativaProjeto {
     @JsonValue
     public String getEstimativaProjeto(){return tipoEstimativa;}
 
+    @JsonCreator
     public static TipoEstimativaProjeto deString(String valor) {
         if (valor == null) return null;
         for (TipoEstimativaProjeto tipo : TipoEstimativaProjeto.values()) {
-            if (tipo.getEstimativaProjeto().equalsIgnoreCase(valor)) {
+            if (tipo.getEstimativaProjeto().equalsIgnoreCase(valor) || tipo.name().equalsIgnoreCase(valor)) {
                 return tipo;
             }
         }
