@@ -37,12 +37,12 @@ public class Tarefa {
     private String status;
 
     @Column(name = "tarefa_parente_id")
-    private int tarefaParenteId;
+    private Integer tarefaParenteId;
 
     @Column(name = "impedimento")
     private boolean impedimento;
 
-    public Tarefa(long sprintId, String titulo, int estimativa, String status, int tarefaParenteId,
+    public Tarefa(long sprintId, String titulo, int estimativa, String status, Integer tarefaParenteId,
             boolean impedimento) {
         this.sprintId = sprintId;
         this.titulo = titulo;
