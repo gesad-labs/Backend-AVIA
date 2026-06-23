@@ -59,26 +59,4 @@ public class SprintController {
         SprintResponseDTO sprint = sprintService.editarSprint(projetoId, sprintId, dto, emailUsuario);
         return ResponseEntity.ok(sprint);
     }
-
-    @PostMapping("/{projeto_id}/sprints/{sprint_id}/tarefas")
-    public ResponseEntity<TarefaResponseDTO> criarTarefa(
-            @PathVariable("projeto_id") Long projetoId,
-            @PathVariable("sprint_id") Long sprintId,
-            @RequestBody @Valid CriarTarefaRequestDTO dto,
-            @AuthenticationPrincipal Jwt jwt
-    ) {
-        TarefaResponseDTO tarefa = tarefaService.criarTarefa(projetoId, sprintId, dto);
-        return new ResponseEntity<>(tarefa, HttpStatus.CREATED);
-    }
-
-    @DeleteMapping("/{projeto_id}/sprints/{sprint_id}/tarefas/{tarefa_id}")
-    public ResponseEntity<Void> removerTarefaDaSprint(
-            @PathVariable("projeto_id") Long projetoId,
-            @PathVariable("sprint_id") Long sprintId,
-            @PathVariable("tarefa_id") Long tarefaId,
-            @AuthenticationPrincipal Jwt jwt
-    ) {
-        tarefaService.removerTarefaDaSprint(projetoId, sprintId, tarefaId);
-        return ResponseEntity.noContent().build();
-    }
 }
