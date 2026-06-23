@@ -4,9 +4,10 @@ public record TarefaResponseDTO(
         long id,
         long sprintId,
         String titulo,
+        String descricao,
         int estimativa,
         String status,
+        String prioridade,
         Integer tarefaParenteId,
         boolean impedimento
-) {
-}
+) {}

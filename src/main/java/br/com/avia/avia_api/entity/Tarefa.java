@@ -1,11 +1,6 @@
 package br.com.avia.avia_api.entity;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -24,11 +19,17 @@ public class Tarefa {
     @Setter(AccessLevel.NONE)
     private long id;
 
+    @Column(name = "projeto_id")
+    private long projetoId;
+
     @Column(name = "sprint_id")
     private long sprintId;
 
     @Column(name = "titulo")
     private String titulo;
+
+    @Column(name = "descricao")
+    private String descricao;
 
     @Column(name = "estimativa")
     private int estimativa;
@@ -36,20 +37,32 @@ public class Tarefa {
     @Column(name = "status")
     private String status;
 
+    @Column(name = "prioridade")
+    private String prioridade;
+
     @Column(name = "tarefa_parente_id")
     private Integer tarefaParenteId;
 
     @Column(name = "impedimento")
     private boolean impedimento;
 
-    public Tarefa(long sprintId, String titulo, int estimativa, String status, Integer tarefaParenteId,
-            boolean impedimento) {
+    public Tarefa(long projetoId,
+                  long sprintId,
+                  String titulo,
+                  String descricao,
+                  int estimativa,
+                  String status,
+                  String prioridade,
+                  Integer tarefaParenteId,
+                  boolean impedimento) {
+        this.projetoId = projetoId;
         this.sprintId = sprintId;
         this.titulo = titulo;
+        this.descricao = descricao;
         this.estimativa = estimativa;
         this.status = status;
+        this.prioridade = prioridade;
         this.tarefaParenteId = tarefaParenteId;
         this.impedimento = impedimento;
     }
-
 }
