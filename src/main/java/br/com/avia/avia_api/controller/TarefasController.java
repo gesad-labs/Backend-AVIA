@@ -66,6 +66,7 @@ public class TarefasController {
 
         return ResponseEntity.ok(tarefas);
     }
+
     @GetMapping("/{projeto_id}/tarefas/{tarefa_id}")
     public ResponseEntity<TarefaResponseDTO> buscarTarefaPorId(
             @PathVariable("projeto_id") Long projetoId,
@@ -74,6 +75,32 @@ public class TarefasController {
     ) {
         TarefaResponseDTO tarefa =
                 tarefaService.buscarTarefaPorId(projetoId, tarefaId);
+
+        return ResponseEntity.ok(tarefa);
+    }
+
+    @PatchMapping("/{projeto_id}/tarefas/{tarefa_id}")
+    public ResponseEntity<TarefaResponseDTO> editarTarefa(
+            @PathVariable("projeto_id") Long projetoId,
+            @PathVariable("tarefa_id") Long tarefaId,
+            @RequestBody EditarTarefaRequestDTO dto,
+            @AuthenticationPrincipal Jwt jwt
+    ) {
+        TarefaResponseDTO tarefa =
+                tarefaService.editarTarefa(projetoId, tarefaId, dto);
+
+        return ResponseEntity.ok(tarefa);
+    }
+
+    @PatchMapping("/{projeto_id}/tarefas/{tarefa_id}/status")
+    public ResponseEntity<TarefaResponseDTO> atualizarStatus(
+            @PathVariable("projeto_id") Long projetoId,
+            @PathVariable("tarefa_id") Long tarefaId,
+            @RequestBody AtualizarStatusTarefaRequestDTO dto,
+            @AuthenticationPrincipal Jwt jwt
+    ) {
+        TarefaResponseDTO tarefa =
+                tarefaService.atualizarStatus(projetoId, tarefaId, dto);
 
         return ResponseEntity.ok(tarefa);
     }

@@ -1,8 +1,6 @@
 package br.com.avia.avia_api.service;
 
-import br.com.avia.avia_api.dto.tarefa.CriarTarefaRequestDTO;
-import br.com.avia.avia_api.dto.tarefa.CriarTarefaBacklogRequestDTO;
-import br.com.avia.avia_api.dto.tarefa.TarefaResponseDTO;
+import br.com.avia.avia_api.dto.tarefa.*;
 import br.com.avia.avia_api.entity.Sprint;
 import br.com.avia.avia_api.entity.Tarefa;
 import br.com.avia.avia_api.repository.SprintRepository;
@@ -114,6 +112,62 @@ public class TarefaService {
         }
 
         return converterParaDTO(tarefa);
+    }
+
+    @Transactional
+    public TarefaResponseDTO editarTarefa(
+            Long projetoId,
+            Long tarefaId,
+            EditarTarefaRequestDTO dto
+    ) {
+
+        Tarefa tarefa = tarefaRepository.findById(tarefaId)
+                .orElseThrow(() -> new RuntimeException("Tarefa não encontrada"));
+
+        if (tarefa.getProjetoId() != projetoId) {
+            throw new RuntimeException("Tarefa não pertence a esse projeto");
+        }
+
+        if (dto.titulo() != null) {
+            tarefa.setTitulo(dto.titulo());
+        }
+
+        if (dto.descricao() != null) {
+            tarefa.setDescricao(dto.descricao());
+        }
+
+        if (dto.estimativa() != null) {
+            tarefa.setEstimativa(dto.estimativa());
+        }
+
+        if (dto.prioridade() != null) {
+            tarefa.setPrioridade(dto.prioridade().toUpperCase());
+        }
+
+        Tarefa tarefaAtualizada = tarefaRepository.save(tarefa);
+
+        return converterParaDTO(tarefaAtualizada);
+    }
+
+    @Transactional
+    public TarefaResponseDTO atualizarStatus(
+            Long projetoId,
+            Long tarefaId,
+            AtualizarStatusTarefaRequestDTO dto
+    ) {
+
+        Tarefa tarefa = tarefaRepository.findById(tarefaId)
+                .orElseThrow(() -> new RuntimeException("Tarefa não encontrada"));
+
+        if (tarefa.getProjetoId() != projetoId) {
+            throw new RuntimeException("Tarefa não pertence a esse projeto");
+        }
+
+        tarefa.setStatus(dto.status().toUpperCase());
+
+        Tarefa tarefaAtualizada = tarefaRepository.save(tarefa);
+
+        return converterParaDTO(tarefaAtualizada);
     }
 
     private TarefaResponseDTO converterParaDTO(Tarefa tarefa) {
