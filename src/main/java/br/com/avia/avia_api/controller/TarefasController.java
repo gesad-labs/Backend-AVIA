@@ -79,6 +79,19 @@ public class TarefasController {
         return ResponseEntity.ok(tarefa);
     }
 
+    @PatchMapping("/{projeto_id}/tarefas/{tarefa_id}/status")
+    public ResponseEntity<TarefaResponseDTO> atualizarStatus(
+            @PathVariable("projeto_id") Long projetoId,
+            @PathVariable("tarefa_id") Long tarefaId,
+            @RequestBody AtualizarStatusTarefaRequestDTO dto,
+            @AuthenticationPrincipal Jwt jwt
+    ) {
+        TarefaResponseDTO tarefa =
+                tarefaService.atualizarStatus(projetoId, tarefaId, dto);
+
+        return ResponseEntity.ok(tarefa);
+    }
+
     @PatchMapping("/{projeto_id}/tarefas/{tarefa_id}")
     public ResponseEntity<TarefaResponseDTO> editarTarefa(
             @PathVariable("projeto_id") Long projetoId,
@@ -92,17 +105,5 @@ public class TarefasController {
         return ResponseEntity.ok(tarefa);
     }
 
-    @PatchMapping("/{projeto_id}/tarefas/{tarefa_id}/status")
-    public ResponseEntity<TarefaResponseDTO> atualizarStatus(
-            @PathVariable("projeto_id") Long projetoId,
-            @PathVariable("tarefa_id") Long tarefaId,
-            @RequestBody AtualizarStatusTarefaRequestDTO dto,
-            @AuthenticationPrincipal Jwt jwt
-    ) {
-        TarefaResponseDTO tarefa =
-                tarefaService.atualizarStatus(projetoId, tarefaId, dto);
-
-        return ResponseEntity.ok(tarefa);
-    }
 
 }

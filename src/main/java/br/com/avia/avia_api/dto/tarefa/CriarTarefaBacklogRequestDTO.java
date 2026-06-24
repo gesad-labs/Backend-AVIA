@@ -10,6 +10,8 @@ public record CriarTarefaBacklogRequestDTO(
         String descricao,
 
         @NotBlank(message = "A prioridade é obrigatória")
-        String prioridade
+        String prioridade,
+
+        Long tarefaParenteId
 
 ) {}

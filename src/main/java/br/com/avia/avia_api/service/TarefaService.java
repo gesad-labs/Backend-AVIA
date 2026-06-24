@@ -1,10 +1,8 @@
 package br.com.avia.avia_api.service;
 
 import br.com.avia.avia_api.dto.tarefa.*;
-import br.com.avia.avia_api.entity.Sprint;
-import br.com.avia.avia_api.entity.Tarefa;
-import br.com.avia.avia_api.repository.SprintRepository;
-import br.com.avia.avia_api.repository.TarefaRepository;
+import br.com.avia.avia_api.entity.*;
+import br.com.avia.avia_api.repository.*;
 import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 
@@ -31,6 +29,17 @@ public class TarefaService {
             throw new RuntimeException("Sprint não pertence a esse projeto");
         }
 
+        Long tarefaParenteId = dto.tarefaParenteId();
+
+        if (tarefaParenteId != null) {
+            Tarefa tarefaParente = tarefaRepository.findById(tarefaParenteId)
+                    .orElseThrow(() -> new RuntimeException("Tarefa parente não encontrada"));
+
+            if (tarefaParente.getProjetoId() != projetoId) {
+                throw new RuntimeException("Tarefa parente não pertence a esse projeto");
+            }
+        }
+
         Tarefa tarefa = new Tarefa(
                 projetoId,
                 sprintId,
@@ -39,7 +48,7 @@ public class TarefaService {
                 dto.estimativa(),
                 "PENDENTE",
                 dto.prioridade().toUpperCase(),
-                dto.tarefaParenteId(),
+                tarefaParenteId,
                 false
         );
 
@@ -68,6 +77,17 @@ public class TarefaService {
     @Transactional
     public TarefaResponseDTO criarTarefaBacklog(Long projetoId, CriarTarefaBacklogRequestDTO dto) {
 
+        Long tarefaParenteId = dto.tarefaParenteId();
+
+        if (tarefaParenteId != null) {
+            Tarefa tarefaParente = tarefaRepository.findById(tarefaParenteId)
+                    .orElseThrow(() -> new RuntimeException("Tarefa parente não encontrada"));
+
+            if (tarefaParente.getProjetoId() != projetoId) {
+                throw new RuntimeException("Tarefa parente não pertence a esse projeto");
+            }
+        }
+
         Tarefa tarefa = new Tarefa(
                 projetoId,
                 0,
@@ -76,7 +96,7 @@ public class TarefaService {
                 0,
                 "BACKLOG",
                 dto.prioridade().toUpperCase(),
-                null,
+                tarefaParenteId,
                 false
         );
 
@@ -86,11 +106,7 @@ public class TarefaService {
     }
 
     @Transactional
-    public List<TarefaResponseDTO> listarBacklog(
-            Long projetoId,
-            String status,
-            String prioridade
-    ) {
+    public List<TarefaResponseDTO> listarBacklog(Long projetoId, String status, String prioridade) {
 
         List<Tarefa> tarefas = tarefaRepository.findByProjetoIdAndSprintId(projetoId, 0);
 
@@ -115,11 +131,7 @@ public class TarefaService {
     }
 
     @Transactional
-    public TarefaResponseDTO editarTarefa(
-            Long projetoId,
-            Long tarefaId,
-            EditarTarefaRequestDTO dto
-    ) {
+    public TarefaResponseDTO editarTarefa(Long projetoId, Long tarefaId, EditarTarefaRequestDTO dto) {
 
         Tarefa tarefa = tarefaRepository.findById(tarefaId)
                 .orElseThrow(() -> new RuntimeException("Tarefa não encontrada"));
@@ -150,11 +162,7 @@ public class TarefaService {
     }
 
     @Transactional
-    public TarefaResponseDTO atualizarStatus(
-            Long projetoId,
-            Long tarefaId,
-            AtualizarStatusTarefaRequestDTO dto
-    ) {
+    public TarefaResponseDTO atualizarStatus(Long projetoId, Long tarefaId, AtualizarStatusTarefaRequestDTO dto) {
 
         Tarefa tarefa = tarefaRepository.findById(tarefaId)
                 .orElseThrow(() -> new RuntimeException("Tarefa não encontrada"));

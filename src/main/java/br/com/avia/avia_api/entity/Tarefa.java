@@ -41,7 +41,7 @@ public class Tarefa {
     private String prioridade;
 
     @Column(name = "tarefa_parente_id")
-    private Integer tarefaParenteId;
+    private Long tarefaParenteId;
 
     @Column(name = "impedimento")
     private boolean impedimento;
@@ -53,7 +53,7 @@ public class Tarefa {
                   int estimativa,
                   String status,
                   String prioridade,
-                  Integer tarefaParenteId,
+                  Long tarefaParenteId,
                   boolean impedimento) {
         this.projetoId = projetoId;
         this.sprintId = sprintId;

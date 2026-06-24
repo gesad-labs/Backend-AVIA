@@ -70,8 +70,8 @@ public class ProjetoController {
         return ResponseEntity.ok(membros);
     }
 
-    @PostMapping("/{id}/membros")
-    public ResponseEntity<Map<String, String>> adicionarNovoMembro(@PathVariable Long id,
+        @PostMapping("/{id}/membros")
+        public ResponseEntity<Map<String, String>> adicionarNovoMembro(@PathVariable Long id,
                                                                    @RequestBody @Valid AdicionarMembroProjetoRequestDTO dto,
                                                                    @AuthenticationPrincipal Jwt jwt) {
         String emailGerente = jwt.getSubject();

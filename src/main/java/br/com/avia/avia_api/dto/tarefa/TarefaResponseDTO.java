@@ -8,6 +8,6 @@ public record TarefaResponseDTO(
         int estimativa,
         String status,
         String prioridade,
-        Integer tarefaParenteId,
+        Long tarefaParenteId,
         boolean impedimento
 ) {}

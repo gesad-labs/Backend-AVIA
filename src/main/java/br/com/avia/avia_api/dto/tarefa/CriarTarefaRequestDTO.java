@@ -14,6 +14,6 @@ public record CriarTarefaRequestDTO(
         @NotBlank(message = "A prioridade é obrigatória")
         String prioridade,
 
-        Integer tarefaParenteId
+        Long tarefaParenteId
 
 ) {}
