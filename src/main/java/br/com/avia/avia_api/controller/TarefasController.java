@@ -105,5 +105,29 @@ public class TarefasController {
         return ResponseEntity.ok(tarefa);
     }
 
+    @PostMapping("/{projeto_id}/tarefas/{tarefa_id}/anexos")
+    public ResponseEntity<AnexoResponseDTO> adicionarAnexo(
+            @PathVariable("projeto_id") Long projetoId,
+            @PathVariable("tarefa_id") Long tarefaId,
+            @RequestBody @Valid CriarAnexoRequestDTO dto,
+            @AuthenticationPrincipal Jwt jwt
+    ) {
+        AnexoResponseDTO response =
+                tarefaService.adicionarAnexo(projetoId, tarefaId, dto);
+
+        return new ResponseEntity<>(response, HttpStatus.CREATED);
+    }
+
+    @DeleteMapping("/{projeto_id}/tarefas/{tarefa_id}/anexos/{anexo_id}")
+    public ResponseEntity<Void> removerAnexo(
+            @PathVariable("projeto_id") Long projetoId,
+            @PathVariable("tarefa_id") Long tarefaId,
+            @PathVariable("anexo_id") Integer anexoId,
+            @AuthenticationPrincipal Jwt jwt
+    ) {
+        tarefaService.removerAnexo(projetoId, tarefaId, anexoId);
+        return ResponseEntity.noContent().build();
+    }
+
 
 }

@@ -13,10 +13,16 @@ public class TarefaService {
 
     private final TarefaRepository tarefaRepository;
     private final SprintRepository sprintRepository;
+    private final AnexoRepository anexoRepository;
 
-    public TarefaService(TarefaRepository tarefaRepository, SprintRepository sprintRepository) {
+    public TarefaService(
+            TarefaRepository tarefaRepository,
+            SprintRepository sprintRepository,
+            AnexoRepository anexoRepository
+    ) {
         this.tarefaRepository = tarefaRepository;
         this.sprintRepository = sprintRepository;
+        this.anexoRepository = anexoRepository;
     }
 
     @Transactional
@@ -176,6 +182,62 @@ public class TarefaService {
         Tarefa tarefaAtualizada = tarefaRepository.save(tarefa);
 
         return converterParaDTO(tarefaAtualizada);
+    }
+
+    @Transactional
+    public AnexoResponseDTO adicionarAnexo(
+            Long projetoId,
+            Long tarefaId,
+            CriarAnexoRequestDTO dto
+    ) {
+
+        Tarefa tarefa = tarefaRepository.findById(tarefaId)
+                .orElseThrow(() -> new RuntimeException("Tarefa não encontrada"));
+
+        if (tarefa.getProjetoId() != projetoId) {
+            throw new RuntimeException("Tarefa não pertence a esse projeto");
+        }
+
+        Anexo anexo = new Anexo(
+                tarefaId,
+                dto.nome(),
+                dto.tipoArquivo(),
+                dto.url()
+        );
+
+        Anexo salvo = anexoRepository.save(anexo);
+
+        return new AnexoResponseDTO(
+                salvo.getId(),
+                salvo.getTarefaId(),
+                salvo.getNome(),
+                salvo.getTipoArquivo(),
+                salvo.getUrl()
+        );
+    }
+
+    @Transactional
+    public void removerAnexo(
+            Long projetoId,
+            Long tarefaId,
+            Integer anexoId
+    ) {
+
+        Tarefa tarefa = tarefaRepository.findById(tarefaId)
+                .orElseThrow(() -> new RuntimeException("Tarefa não encontrada"));
+
+        if (tarefa.getProjetoId() != projetoId) {
+            throw new RuntimeException("Tarefa não pertence a esse projeto");
+        }
+
+        Anexo anexo = anexoRepository.findById(anexoId)
+                .orElseThrow(() -> new RuntimeException("Anexo não encontrado"));
+
+        if (anexo.getTarefaId() != tarefaId) {
+            throw new RuntimeException("Anexo não pertence a essa tarefa");
+        }
+
+        anexoRepository.delete(anexo);
     }
 
     private TarefaResponseDTO converterParaDTO(Tarefa tarefa) {
