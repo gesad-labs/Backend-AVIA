@@ -1,10 +1,7 @@
 package br.com.avia.avia_api.service;
 
 import br.com.avia.avia_api.dto.projeto.*;
-import br.com.avia.avia_api.entity.Papel;
-import br.com.avia.avia_api.entity.Projeto;
-import br.com.avia.avia_api.entity.ProjetoUsuario;
-import br.com.avia.avia_api.entity.Usuario;
+import br.com.avia.avia_api.entity.*;
 import br.com.avia.avia_api.enums.CargoProjeto;
 import br.com.avia.avia_api.enums.PapelProjeto;
 import br.com.avia.avia_api.repository.PapelRepository;
@@ -15,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -137,8 +135,7 @@ public class ProjetoService {
     }
 
     @Transactional
-    public void adicionarMembroAoProjeto(Long id, AdicionarMembroProjetoRequestDTO dto, String emailGerente) {
-        // Validações das regras de negócio do Enum que vieram da sua outra branch
+    public void adicionarMembroAoProjeto(Long id, AdicionarMembroProjetoRequestDTO dto, String emailMembro) {
         if (!dto.cargo().isAtribuivel()) {
             throw new RuntimeException("Este cargo não pode ser atribuído manualmente.");
         }
@@ -146,8 +143,16 @@ public class ProjetoService {
             throw new RuntimeException("Este papel não pode ser atribuído manualmente.");
         }
 
-        Usuario gerente = buscarUsuarioPorEmail(emailGerente);
-        validarPermissaoGerente(id, gerente.getId());
+        Usuario membro = buscarUsuarioPorEmail(emailMembro);
+
+        Papel membroPapel = projetoUsuarioRepository.findPapelByProjetoIdAndUsuarioId(id, membro.getId());
+        Set<Permissao> membroPermissoes = membroPapel.getPermissoes();
+
+        boolean possuiPermissao = membroPermissoes.stream()
+                .anyMatch(p -> p.getDescricao().equals("ADICIONARMEMBROS"));
+
+        if(!possuiPermissao)
+            throw new RuntimeException("Você não tem autorização para isso.");
 
         Usuario novoMembro = buscarUsuarioPorEmail(dto.emailUsuario());
 
@@ -170,10 +175,20 @@ public class ProjetoService {
     }
 
     @Transactional
-    public String removerMembroDoProjeto(Long id, RemoverMembroRequestDTO dto, String emailGerente) {
-        Usuario gerente = buscarUsuarioPorEmail(emailGerente);
-        validarPermissaoGerente(id, gerente.getId());
+    public String removerMembroDoProjeto(Long id, RemoverMembroRequestDTO dto, String emailMembro) {
+        //Membro que solicita a operação de exclusão
+        Usuario membroSolicitante = buscarUsuarioPorEmail(emailMembro);
 
+        Papel membroPapel = projetoUsuarioRepository.findPapelByProjetoIdAndUsuarioId(id, membroSolicitante.getId());
+        Set<Permissao> membroPermissoes = membroPapel.getPermissoes();
+
+        boolean possuiPermissao = membroPermissoes.stream()
+                .anyMatch(p -> p.getDescricao().equals("REMOVERMEMBROS"));
+
+        if(!possuiPermissao)
+            throw new RuntimeException("Você não tem autorização para isso.");
+
+        //Membro a ser removido
         Usuario membro = buscarUsuarioPorEmail(dto.emailMembro());
 
         projetoRepository.findById(id)
@@ -184,12 +199,15 @@ public class ProjetoService {
             throw new RuntimeException("Este usuário não é membro do projeto.");
         }
 
-        projetoUsuarioRepository.deleteByUsuarioId(membro.getId());
         return membro.getNome();
     }
 
-    private void validarPermissaoGerente(Long projetoId, long id) {
-        // Implemente a lógica de validação aqui se necessário
+    private void validarPermissaoGerente(Long projetoId, long usuarioId) {
+        Papel papelMembro = projetoUsuarioRepository.findPapelByProjetoIdAndUsuarioId(projetoId, usuarioId);
+        boolean ehGerente = papelMembro.getNome().equalsIgnoreCase("GERENTE");
+
+        if(!ehGerente)
+            throw new RuntimeException("Somente o gerente pode fazer isso.");
     }
 
     private Usuario buscarUsuarioPorEmail(String email) {

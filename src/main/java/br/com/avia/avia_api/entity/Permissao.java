@@ -1,12 +1,10 @@
 package br.com.avia.avia_api.entity;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.Getter;
+
+import java.util.HashSet;
+import java.util.Set;
 
 @Entity
 @Table(name = "permissoes")
@@ -19,6 +17,9 @@ public class Permissao {
 
     @Column(name = "descricao")
     @Getter private String descricao;
+
+    @ManyToMany(mappedBy = "permissoes")
+    private Set<Papel> papeis = new HashSet<>();
 
     public Permissao() {
     }
