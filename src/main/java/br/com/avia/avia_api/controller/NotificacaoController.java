@@ -2,6 +2,7 @@ package br.com.avia.avia_api.controller;
 
 import br.com.avia.avia_api.dto.notificacao.NotificacaoResponseDTO;
 import br.com.avia.avia_api.service.NotificacaoService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
@@ -9,6 +10,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/projetos/{projetoId}/notificacoes")
+@Tag(name = "Notificacao", description = "Gerenciamento de notificação")
 public class NotificacaoController {
 
     private final NotificacaoService notificacaoService;

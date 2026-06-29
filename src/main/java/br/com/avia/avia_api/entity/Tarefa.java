@@ -1,6 +1,10 @@
 package br.com.avia.avia_api.entity;
 
+import br.com.avia.avia_api.enums.PrioridadeTarefa;
+import br.com.avia.avia_api.enums.StatusTarefa;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -17,14 +21,15 @@ public class Tarefa {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
     @Setter(AccessLevel.NONE)
-    private long id;
+    private Long id;
 
     @Column(name = "projeto_id")
-    private long projetoId;
+    private Long projetoId;
 
     @Column(name = "sprint_id")
-    private long sprintId;
+    private Long sprintId;
 
+    @NotNull
     @Column(name = "titulo")
     private String titulo;
 
@@ -32,29 +37,32 @@ public class Tarefa {
     private String descricao;
 
     @Column(name = "estimativa")
-    private int estimativa;
+    private Integer estimativa;
 
+    @NotNull
+    @Enumerated(EnumType.STRING)
     @Column(name = "status")
-    private String status;
+    private StatusTarefa status;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "prioridade")
-    private String prioridade;
+    private PrioridadeTarefa prioridade;
 
     @Column(name = "tarefa_parente_id")
     private Long tarefaParenteId;
 
     @Column(name = "impedimento")
-    private boolean impedimento;
+    private Boolean impedimento;
 
-    public Tarefa(long projetoId,
-                  long sprintId,
+    public Tarefa(Long projetoId,
+                  Long sprintId,
                   String titulo,
                   String descricao,
-                  int estimativa,
-                  String status,
-                  String prioridade,
+                  Integer estimativa,
+                  StatusTarefa status,
+                  PrioridadeTarefa prioridade,
                   Long tarefaParenteId,
-                  boolean impedimento) {
+                  Boolean impedimento) {
         this.projetoId = projetoId;
         this.sprintId = sprintId;
         this.titulo = titulo;
