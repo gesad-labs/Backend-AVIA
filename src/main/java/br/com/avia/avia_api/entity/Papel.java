@@ -18,7 +18,7 @@ public class Papel {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
     @Setter(AccessLevel.NONE)
-    private long id;
+    private Long id;
     
     @Column(name = "nome")
     private String nome;

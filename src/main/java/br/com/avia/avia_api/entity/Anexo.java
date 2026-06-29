@@ -19,7 +19,7 @@ public class Anexo {
     @Getter private int id;
 
     @Column(name = "tarefa_id")
-    @Getter @Setter private long tarefaId;
+    @Getter @Setter private Long tarefaId;
 
     @Column(name = "nome")
     @Getter @Setter private String nome;

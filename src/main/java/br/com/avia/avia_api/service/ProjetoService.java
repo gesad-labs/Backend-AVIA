@@ -61,7 +61,7 @@ public class ProjetoService {
         List<Projeto> projetosDoUsuario = projetoUsuarioRepository.findProjetosByMembroId(usuarioLogado.getId());
 
         boolean temAcesso = projetosDoUsuario.stream()
-                .anyMatch(p -> p.getId() == projetoId);
+                .anyMatch(p -> p.getId().equals(projetoId));
 
         if (!temAcesso) {
             throw new RuntimeException("Projeto não encontrado ou você não tem permissão para visualizá-lo.");
