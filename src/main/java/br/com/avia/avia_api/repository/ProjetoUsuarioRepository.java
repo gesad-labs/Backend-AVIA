@@ -10,15 +10,18 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface ProjetoUsuarioRepository extends JpaRepository<ProjetoUsuario, Long> {
-    // Lista os projetos do usuário
+
     @Query("SELECT pu.projeto FROM ProjetoUsuario pu WHERE pu.usuario.id = :usuarioId")
     List<Projeto> findProjetosByMembroId(@Param("usuarioId") Long usuarioId);
 
-    // Lista os membros de um projeto
-    @Query("SELECT pu FROM ProjetoUsuario pu JOIN FETCH pu.usuario WHERE pu.projeto.id = :projetoId")
+    @Query("SELECT pu FROM ProjetoUsuario pu JOIN FETCH pu.usuario JOIN FETCH pu.papel WHERE pu.projeto.id = :projetoId")
     List<ProjetoUsuario> findMembrosByProjetoId(@Param("projetoId") Long projetoId);
+
+    @Query("SELECT pu FROM ProjetoUsuario pu JOIN FETCH pu.papel WHERE pu.projeto.id = :projetoId AND pu.usuario.id = :usuarioId")
+    Optional<ProjetoUsuario> findByProjetoIdAndUsuarioId(@Param("projetoId") Long projetoId, @Param("usuarioId") Long usuarioId);
 
     @Modifying
     @Transactional
@@ -27,8 +30,8 @@ public interface ProjetoUsuarioRepository extends JpaRepository<ProjetoUsuario, 
 
     @Modifying
     @Transactional
-    @Query("DELETE FROM ProjetoUsuario pu WHERE pu.usuario.id = :usuarioId")
-    void deleteByUsuarioId(@Param("usuarioId") Long usuarioId);
+    @Query("DELETE FROM ProjetoUsuario pu WHERE pu.projeto.id = :projetoId AND pu.usuario.id = :usuarioId")
+    void deleteByProjetoIdAndUsuarioId(@Param("projetoId") Long projetoId, @Param("usuarioId") Long usuarioId);
 
     boolean existsByProjetoIdAndUsuarioId(Long projetoId, Long usuarioId);
 }
