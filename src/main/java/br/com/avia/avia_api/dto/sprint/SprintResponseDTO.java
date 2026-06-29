@@ -4,6 +4,8 @@ public record SprintResponseDTO(
         Long id,
         String nome,
         Long projetoId,
-        String status
+        String status,
+        String dataInicio,
+        String dataFim
 ) {}
 

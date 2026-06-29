@@ -33,9 +33,23 @@ public class Sprint {
     @Column(name = "status")
     private String status;
 
+    @Column(name = "data_inicio")
+    private String dataInicio;
+
+    @Column(name = "data_fim")
+    private String dataFim;
+
     public Sprint(long projetoId, String nome, String status) {
         this.projetoId = projetoId;
         this.nome = nome;
         this.status = status;
+    }
+
+    public Sprint(long projetoId, String nome, String status, String dataInicio, String dataFim) {
+        this.projetoId = projetoId;
+        this.nome = nome;
+        this.status = status;
+        this.dataInicio = dataInicio;
+        this.dataFim = dataFim;
     }
 }
