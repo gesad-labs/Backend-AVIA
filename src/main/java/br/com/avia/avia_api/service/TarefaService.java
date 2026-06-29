@@ -2,6 +2,7 @@ package br.com.avia.avia_api.service;
 
 import br.com.avia.avia_api.dto.tarefa.*;
 import br.com.avia.avia_api.entity.*;
+import br.com.avia.avia_api.exception.permissao.PermissaoNegadaException;
 import br.com.avia.avia_api.exception.sprint.SprintNaoEncontradaException;
 import br.com.avia.avia_api.exception.sprint.SprintNaoPertenceAoProjetoException;
 import br.com.avia.avia_api.exception.tarefa.TarefaNaoEncontradaException;
@@ -214,7 +215,7 @@ public class TarefaService {
                 .anyMatch(p -> p.getDescricao().equals(permissaoLabel));
 
         if(!possuiPermissao)
-            throw new RuntimeException("Você não tem autorização para isso.");
+            throw new PermissaoNegadaException();
     }
 
 }

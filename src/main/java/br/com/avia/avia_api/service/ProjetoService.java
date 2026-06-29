@@ -4,6 +4,7 @@ import br.com.avia.avia_api.dto.projeto.*;
 import br.com.avia.avia_api.entity.*;
 import br.com.avia.avia_api.enums.CargoProjeto;
 import br.com.avia.avia_api.enums.PapelProjeto;
+import br.com.avia.avia_api.exception.permissao.PermissaoNegadaException;
 import br.com.avia.avia_api.repository.PapelRepository;
 import br.com.avia.avia_api.repository.ProjetoRepository;
 import br.com.avia.avia_api.repository.ProjetoUsuarioRepository;
@@ -217,7 +218,7 @@ public class ProjetoService {
                 .anyMatch(p -> p.getDescricao().equals(permissaoLabel));
 
         if(!possuiPermissao)
-            throw new RuntimeException("Você não tem autorização para isso.");
+            throw new PermissaoNegadaException();
     }
 
 }
