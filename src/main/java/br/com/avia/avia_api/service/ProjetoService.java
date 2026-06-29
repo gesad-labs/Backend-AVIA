@@ -1,12 +1,10 @@
 package br.com.avia.avia_api.service;
 
 import br.com.avia.avia_api.dto.projeto.*;
-import br.com.avia.avia_api.entity.Papel;
-import br.com.avia.avia_api.entity.Projeto;
-import br.com.avia.avia_api.entity.ProjetoUsuario;
-import br.com.avia.avia_api.entity.Usuario;
+import br.com.avia.avia_api.entity.*;
 import br.com.avia.avia_api.enums.CargoProjeto;
 import br.com.avia.avia_api.enums.PapelProjeto;
+import br.com.avia.avia_api.exception.permissao.PermissaoNegadaException;
 import br.com.avia.avia_api.repository.PapelRepository;
 import br.com.avia.avia_api.repository.ProjetoRepository;
 import br.com.avia.avia_api.repository.ProjetoUsuarioRepository;
@@ -15,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -63,7 +62,7 @@ public class ProjetoService {
         List<Projeto> projetosDoUsuario = projetoUsuarioRepository.findProjetosByMembroId(usuarioLogado.getId());
 
         boolean temAcesso = projetosDoUsuario.stream()
-                .anyMatch(p -> p.getId() == projetoId);
+                .anyMatch(p -> p.getId().equals(projetoId));
 
         if (!temAcesso) {
             throw new RuntimeException("Projeto não encontrado ou você não tem permissão para visualizá-lo.");
@@ -137,8 +136,11 @@ public class ProjetoService {
     }
 
     @Transactional
-    public void adicionarMembroAoProjeto(Long id, AdicionarMembroProjetoRequestDTO dto, String emailGerente) {
-        // Validações das regras de negócio do Enum que vieram da sua outra branch
+    public void adicionarMembroAoProjeto(Long projetoId, AdicionarMembroProjetoRequestDTO dto, String emailMembro) {
+        Usuario membro = buscarUsuarioPorEmail(emailMembro);
+
+        verificarPermissao(projetoId, membro.getId(), "ADICIONARMEMBROS");
+
         if (!dto.cargo().isAtribuivel()) {
             throw new RuntimeException("Este cargo não pode ser atribuído manualmente.");
         }
@@ -146,15 +148,12 @@ public class ProjetoService {
             throw new RuntimeException("Este papel não pode ser atribuído manualmente.");
         }
 
-        Usuario gerente = buscarUsuarioPorEmail(emailGerente);
-        validarPermissaoGerente(id, gerente.getId());
-
         Usuario novoMembro = buscarUsuarioPorEmail(dto.emailUsuario());
 
-        Projeto projeto = projetoRepository.findById(id)
+        Projeto projeto = projetoRepository.findById(projetoId)
                 .orElseThrow(() -> new RuntimeException("Projeto não encontrado."));
 
-        boolean jaEhMembro = projetoUsuarioRepository.existsByProjetoIdAndUsuarioId(id, novoMembro.getId());
+        boolean jaEhMembro = projetoUsuarioRepository.existsByProjetoIdAndUsuarioId(projetoId, novoMembro.getId());
         if (jaEhMembro) {
             throw new RuntimeException("Este usuário já é membro do projeto.");
         }
@@ -170,26 +169,32 @@ public class ProjetoService {
     }
 
     @Transactional
-    public String removerMembroDoProjeto(Long id, RemoverMembroRequestDTO dto, String emailGerente) {
-        Usuario gerente = buscarUsuarioPorEmail(emailGerente);
-        validarPermissaoGerente(id, gerente.getId());
+    public String removerMembroDoProjeto(Long projetoId, RemoverMembroRequestDTO dto, String emailMembro) {
+        //Membro que solicita a operação de exclusão
+        Usuario membroSolicitante = buscarUsuarioPorEmail(emailMembro);
 
+        verificarPermissao(projetoId, membroSolicitante.getId(), "REMOVERMEMBROS");
+
+        //Membro a ser removido
         Usuario membro = buscarUsuarioPorEmail(dto.emailMembro());
 
-        projetoRepository.findById(id)
+        projetoRepository.findById(projetoId)
                 .orElseThrow(() -> new RuntimeException("Projeto não encontrado."));
 
-        boolean ehMembro = projetoUsuarioRepository.existsByProjetoIdAndUsuarioId(id, membro.getId());
+        boolean ehMembro = projetoUsuarioRepository.existsByProjetoIdAndUsuarioId(projetoId, membro.getId());
         if (!ehMembro) {
             throw new RuntimeException("Este usuário não é membro do projeto.");
         }
 
-        projetoUsuarioRepository.deleteByUsuarioId(membro.getId());
         return membro.getNome();
     }
 
-    private void validarPermissaoGerente(Long projetoId, long id) {
-        // Implemente a lógica de validação aqui se necessário
+    private void validarPermissaoGerente(Long projetoId, long usuarioId) {
+        Papel papelMembro = projetoUsuarioRepository.findPapelByProjetoIdAndUsuarioId(projetoId, usuarioId);
+        boolean ehGerente = papelMembro.getNome().equalsIgnoreCase("GERENTE");
+
+        if(!ehGerente)
+            throw new RuntimeException("Somente o gerente pode fazer isso.");
     }
 
     private Usuario buscarUsuarioPorEmail(String email) {
@@ -204,4 +209,16 @@ public class ProjetoService {
                 projeto.getTipoEstimativa()
         );
     }
+
+    private void verificarPermissao(Long projetoId, Long usuarioId, String permissaoLabel){
+        Papel membroPapel = projetoUsuarioRepository.findPapelByProjetoIdAndUsuarioId(projetoId, usuarioId);
+        Set<Permissao> membroPermissoes = membroPapel.getPermissoes();
+
+        boolean possuiPermissao = membroPermissoes.stream()
+                .anyMatch(p -> p.getDescricao().equals(permissaoLabel));
+
+        if(!possuiPermissao)
+            throw new PermissaoNegadaException();
+    }
+
 }

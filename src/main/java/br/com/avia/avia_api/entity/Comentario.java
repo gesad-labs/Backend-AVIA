@@ -19,7 +19,7 @@ public class Comentario {
     @Getter private int id;
 
     @Column(name = "tarefa_id")
-    @Getter @Setter private long tarefaId;
+    @Getter @Setter private Long tarefaId;
 
     @Column(name = "descricao")
     @Getter @Setter private String descricao;
