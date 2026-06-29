@@ -1,11 +1,10 @@
 package br.com.avia.avia_api.entity;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import br.com.avia.avia_api.enums.PrioridadeTarefa;
+import br.com.avia.avia_api.enums.StatusTarefa;
+import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -22,34 +21,56 @@ public class Tarefa {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
     @Setter(AccessLevel.NONE)
-    private long id;
+    private Long id;
+
+    @Column(name = "projeto_id")
+    private Long projetoId;
 
     @Column(name = "sprint_id")
-    private long sprintId;
+    private Long sprintId;
 
+    @NotNull
     @Column(name = "titulo")
     private String titulo;
 
-    @Column(name = "estimativa")
-    private int estimativa;
+    @Column(name = "descricao")
+    private String descricao;
 
+    @Column(name = "estimativa")
+    private Integer estimativa;
+
+    @NotNull
+    @Enumerated(EnumType.STRING)
     @Column(name = "status")
-    private String status;
+    private StatusTarefa status;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "prioridade")
+    private PrioridadeTarefa prioridade;
 
     @Column(name = "tarefa_parente_id")
-    private Integer tarefaParenteId;
+    private Long tarefaParenteId;
 
     @Column(name = "impedimento")
-    private boolean impedimento;
+    private Boolean impedimento;
 
-    public Tarefa(long sprintId, String titulo, int estimativa, String status, Integer tarefaParenteId,
-            boolean impedimento) {
+    public Tarefa(Long projetoId,
+                  Long sprintId,
+                  String titulo,
+                  String descricao,
+                  Integer estimativa,
+                  StatusTarefa status,
+                  PrioridadeTarefa prioridade,
+                  Long tarefaParenteId,
+                  Boolean impedimento) {
+        this.projetoId = projetoId;
         this.sprintId = sprintId;
         this.titulo = titulo;
+        this.descricao = descricao;
         this.estimativa = estimativa;
         this.status = status;
+        this.prioridade = prioridade;
         this.tarefaParenteId = tarefaParenteId;
         this.impedimento = impedimento;
     }
-
 }

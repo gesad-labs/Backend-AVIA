@@ -2,6 +2,7 @@ package br.com.avia.avia_api.controller;
 
 import br.com.avia.avia_api.dto.projeto.*;
 import br.com.avia.avia_api.service.ProjetoService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -14,6 +15,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/projetos")
+@Tag(name = "Projeto", description = "Gerenciamento de Projeto")
 public class ProjetoController {
 
     private final ProjetoService projetoService;
@@ -70,8 +72,8 @@ public class ProjetoController {
         return ResponseEntity.ok(membros);
     }
 
-    @PostMapping("/{id}/membros")
-    public ResponseEntity<Map<String, String>> adicionarNovoMembro(@PathVariable Long id,
+        @PostMapping("/{id}/membros")
+        public ResponseEntity<Map<String, String>> adicionarNovoMembro(@PathVariable Long id,
                                                                    @RequestBody @Valid AdicionarMembroProjetoRequestDTO dto,
                                                                    @AuthenticationPrincipal Jwt jwt) {
         String emailGerente = jwt.getSubject();

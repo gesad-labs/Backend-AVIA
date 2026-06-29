@@ -1,12 +1,16 @@
 package br.com.avia.avia_api.dto.tarefa;
 
+import br.com.avia.avia_api.enums.PrioridadeTarefa;
+import br.com.avia.avia_api.enums.StatusTarefa;
+
 public record TarefaResponseDTO(
-        long id,
-        long sprintId,
+        Long id,
+        Long sprintId,
         String titulo,
-        int estimativa,
-        String status,
-        Integer tarefaParenteId,
-        boolean impedimento
-) {
-}
+        String descricao,
+        Integer estimativa,
+        StatusTarefa status,
+        PrioridadeTarefa prioridade,
+        Long tarefaParenteId,
+        Boolean impedimento
+) {}

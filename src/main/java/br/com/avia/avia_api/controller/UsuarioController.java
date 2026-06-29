@@ -3,11 +3,13 @@ package br.com.avia.avia_api.controller;
 import br.com.avia.avia_api.dto.usuario.AtualizarUsuarioRequestDTO;
 import br.com.avia.avia_api.dto.usuario.UsuarioResponse;
 import br.com.avia.avia_api.service.UsuarioService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/usuario")
+@Tag(name = "Usuario", description = "Gerenciamento de usuário")
 public class UsuarioController {
 
     private final UsuarioService usuarioService;

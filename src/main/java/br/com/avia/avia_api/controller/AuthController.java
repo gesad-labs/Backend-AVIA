@@ -3,12 +3,14 @@ package br.com.avia.avia_api.controller;
 import br.com.avia.avia_api.dto.auth.*;
 import br.com.avia.avia_api.dto.usuario.UsuarioResponse;
 import br.com.avia.avia_api.service.AuthService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/auth")
+@Tag(name = "Autenticacao", description = "Autenticação e Recuperação")
 public class AuthController {
 
     private final AuthService authService;
