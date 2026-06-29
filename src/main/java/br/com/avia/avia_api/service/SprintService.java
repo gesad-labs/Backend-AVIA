@@ -4,6 +4,9 @@ import br.com.avia.avia_api.dto.sprint.*;
 import br.com.avia.avia_api.entity.Projeto;
 import br.com.avia.avia_api.entity.Sprint;
 import br.com.avia.avia_api.entity.Usuario;
+import br.com.avia.avia_api.enums.StatusSprint;
+import br.com.avia.avia_api.exception.sprint.SprintJaExisteException;
+import br.com.avia.avia_api.exception.sprint.SprintNaoEncontradaException;
 import br.com.avia.avia_api.repository.ProjetoRepository;
 import br.com.avia.avia_api.repository.SprintRepository;
 import br.com.avia.avia_api.repository.UsuarioRepository;
@@ -38,13 +41,13 @@ public class SprintService {
                 .existsByProjetoIdAndNome(projetoId, dto.nome());
 
         if (sprintJaExiste) {
-            throw new RuntimeException("Já existe uma sprint com esse nome neste projeto");
+            throw new SprintJaExisteException();
         }
 
         Sprint sprint = new Sprint(
                 projeto.getId(),
                 dto.nome(),
-                "Em andamento"
+                StatusSprint.EM_PLANEJAMENTO
         );
 
         Sprint sprintSalva = sprintRepository.save(sprint);
@@ -69,19 +72,14 @@ public class SprintService {
     }
 
     @Transactional
-    public SprintResponseDTO editarSprint(Long projetoId, Long sprintId, EditarSprintRequestDTO dto, String emailUsuario) {
+    public SprintResponseDTO editarSprint(Long sprintId, EditarSprintRequestDTO dto, String emailUsuario) {
         buscarUsuarioPorEmail(emailUsuario);
 
-        projetoRepository.findById(projetoId)
-                .orElseThrow(() -> new RuntimeException("Projeto não encontrado"));
-
         Sprint sprint = sprintRepository.findById(sprintId)
-                .orElseThrow(() -> new RuntimeException("Sprint não encontrada"));
+                .orElseThrow(SprintNaoEncontradaException::new);
 
         if (dto.nome() != null) sprint.setNome(dto.nome());
-        if (sprint.getProjetoId() != projetoId) {
-            throw new RuntimeException("Sprint não pertence a esse projeto");
-        }
+
         if (dto.status() != null) sprint.setStatus(dto.status());
 
         Sprint sprintAtualizada = sprintRepository.save(sprint);

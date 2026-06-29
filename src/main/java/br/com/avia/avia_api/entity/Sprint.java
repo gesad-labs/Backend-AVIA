@@ -1,11 +1,8 @@
 package br.com.avia.avia_api.entity;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import br.com.avia.avia_api.enums.StatusSprint;
+import jakarta.persistence.*;
+import jakarta.validation.constraints.NotNull;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -30,10 +27,12 @@ public class Sprint {
     @Column(name = "nome")
     private String nome;
 
+    @NotNull
+    @Enumerated(EnumType.STRING)
     @Column(name = "status")
-    private String status;
+    private StatusSprint status;
 
-    public Sprint(long projetoId, String nome, String status) {
+    public Sprint(long projetoId, String nome, StatusSprint status) {
         this.projetoId = projetoId;
         this.nome = nome;
         this.status = status;
