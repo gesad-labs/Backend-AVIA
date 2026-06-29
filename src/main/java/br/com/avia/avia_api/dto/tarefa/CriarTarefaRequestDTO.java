@@ -6,6 +6,8 @@ public record CriarTarefaRequestDTO(
         @NotBlank(message = "O título é obrigatório")
         String titulo,
         int estimativa,
-        Integer tarefaParenteId
+        Integer tarefaParenteId,
+        String prioridade,
+        String tipo
 ) {
 }

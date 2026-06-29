@@ -42,6 +42,15 @@ public class Tarefa {
     @Column(name = "impedimento")
     private boolean impedimento;
 
+    @Column(name = "estimativa_consolidada")
+    private boolean estimativaConsolidada = false;
+
+    @Column(name = "prioridade")
+    private String prioridade;
+
+    @Column(name = "tipo")
+    private String tipo;
+
     public Tarefa(long sprintId, String titulo, int estimativa, String status, Integer tarefaParenteId,
             boolean impedimento) {
         this.sprintId = sprintId;
@@ -50,6 +59,7 @@ public class Tarefa {
         this.status = status;
         this.tarefaParenteId = tarefaParenteId;
         this.impedimento = impedimento;
+        this.estimativaConsolidada = false;
     }
 
 }

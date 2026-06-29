@@ -7,6 +7,9 @@ public record TarefaResponseDTO(
         int estimativa,
         String status,
         Integer tarefaParenteId,
-        boolean impedimento
+        boolean impedimento,
+        boolean estimativaConsolidada,
+        String prioridade,
+        String tipo
 ) {
 }
