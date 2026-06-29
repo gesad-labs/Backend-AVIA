@@ -61,10 +61,7 @@ public class ProjetoService {
         Usuario usuarioLogado = buscarUsuarioPorEmail(emailUsuario);
 
         List<Projeto> projetosDoUsuario = projetoUsuarioRepository.findProjetosByMembroId(usuarioLogado.getId());
-
-        boolean temAcesso = projetosDoUsuario.stream()
-                .anyMatch(p -> p.getId() == projetoId);
-
+        boolean temAcesso = projetosDoUsuario.stream().anyMatch(p -> p.getId() == projetoId);
         if (!temAcesso) {
             throw new RuntimeException("Projeto não encontrado ou você não tem permissão para visualizá-lo.");
         }
@@ -77,20 +74,16 @@ public class ProjetoService {
 
     public List<ProjetoResponseDTO> listarProjetosDoUsuario(String emailUsuario) {
         Usuario usuarioLogado = buscarUsuarioPorEmail(emailUsuario);
-
         List<Projeto> projetos = projetoUsuarioRepository.findProjetosByMembroId(usuarioLogado.getId());
-
-        return projetos.stream()
-                .map(this::converterParaDTO)
-                .collect(Collectors.toList());
+        return projetos.stream().map(this::converterParaDTO).collect(Collectors.toList());
     }
 
+    @Transactional
     public List<MembroResponseDTO> listarMembrosDoProjeto(long idProjeto, String emailUsuario) {
         Usuario usuarioLogado = buscarUsuarioPorEmail(emailUsuario);
 
         List<Projeto> projetosDoUsuario = projetoUsuarioRepository.findProjetosByMembroId(usuarioLogado.getId());
         boolean temAcesso = projetosDoUsuario.stream().anyMatch(p -> p.getId() == idProjeto);
-
         if (!temAcesso) {
             throw new RuntimeException("Você não tem permissão para visualizar os membros deste projeto.");
         }
@@ -102,7 +95,8 @@ public class ProjetoService {
                         membro.getUsuario().getId(),
                         membro.getUsuario().getNome(),
                         membro.getUsuario().getEmail(),
-                        membro.getCargo()
+                        membro.getCargo(),
+                        membro.getPapel().getNome()
                 ))
                 .collect(Collectors.toList());
     }
@@ -110,11 +104,8 @@ public class ProjetoService {
     @Transactional
     public void deletarProjeto(Long projetoId, String emailUsuario) {
         Usuario usuarioLogado = buscarUsuarioPorEmail(emailUsuario);
-
         validarPermissaoGerente(projetoId, usuarioLogado.getId());
-
         projetoUsuarioRepository.deleteByProjetoId(projetoId);
-
         projetoRepository.deleteById(projetoId);
     }
 
@@ -122,7 +113,6 @@ public class ProjetoService {
     public ProjetoResponseDTO editarInformacoesDoProjeto(Long projetoId, AtualizarProjetoRequestDTO dto,
                                                          String emailUsuario) {
         Usuario usuarioLogado = buscarUsuarioPorEmail(emailUsuario);
-
         validarPermissaoGerente(projetoId, usuarioLogado.getId());
 
         Projeto projeto = projetoRepository.findById(projetoId)
@@ -138,7 +128,6 @@ public class ProjetoService {
 
     @Transactional
     public void adicionarMembroAoProjeto(Long id, AdicionarMembroProjetoRequestDTO dto, String emailGerente) {
-        // Validações das regras de negócio do Enum que vieram da sua outra branch
         if (!dto.cargo().isAtribuivel()) {
             throw new RuntimeException("Este cargo não pode ser atribuído manualmente.");
         }
@@ -170,26 +159,76 @@ public class ProjetoService {
     }
 
     @Transactional
-    public String removerMembroDoProjeto(Long id, RemoverMembroRequestDTO dto, String emailGerente) {
+    public String removerMembroDoProjeto(Long projetoId, RemoverMembroRequestDTO dto, String emailGerente) {
         Usuario gerente = buscarUsuarioPorEmail(emailGerente);
-        validarPermissaoGerente(id, gerente.getId());
+        validarPermissaoGerente(projetoId, gerente.getId());
 
         Usuario membro = buscarUsuarioPorEmail(dto.emailMembro());
 
-        projetoRepository.findById(id)
+        projetoRepository.findById(projetoId)
                 .orElseThrow(() -> new RuntimeException("Projeto não encontrado."));
 
-        boolean ehMembro = projetoUsuarioRepository.existsByProjetoIdAndUsuarioId(id, membro.getId());
-        if (!ehMembro) {
-            throw new RuntimeException("Este usuário não é membro do projeto.");
+        ProjetoUsuario pu = projetoUsuarioRepository
+                .findByProjetoIdAndUsuarioId(projetoId, membro.getId())
+                .orElseThrow(() -> new RuntimeException("Este usuário não é membro do projeto."));
+
+        if (pu.getPapel().getNome().equals(PapelProjeto.GERENTE.name())) {
+            throw new RuntimeException("O gerente do projeto não pode ser removido.");
         }
 
-        projetoUsuarioRepository.deleteByUsuarioId(membro.getId());
+        projetoUsuarioRepository.deleteByProjetoIdAndUsuarioId(projetoId, membro.getId());
         return membro.getNome();
     }
 
-    private void validarPermissaoGerente(Long projetoId, long id) {
-        // Implemente a lógica de validação aqui se necessário
+    @Transactional
+    public MembroResponseDTO atualizarMembroDoProjeto(Long projetoId, Long usuarioId,
+                                                      AtualizarMembroRequestDTO dto, String emailGerente) {
+        Usuario gerente = buscarUsuarioPorEmail(emailGerente);
+        validarPermissaoGerente(projetoId, gerente.getId());
+
+        ProjetoUsuario pu = projetoUsuarioRepository
+                .findByProjetoIdAndUsuarioId(projetoId, usuarioId)
+                .orElseThrow(() -> new RuntimeException("Membro não encontrado no projeto."));
+
+        if (pu.getPapel().getNome().equals(PapelProjeto.GERENTE.name())) {
+            throw new RuntimeException("O papel do gerente não pode ser alterado.");
+        }
+
+        if (dto.cargo() != null) {
+            if (!dto.cargo().isAtribuivel()) {
+                throw new RuntimeException("Este cargo não pode ser atribuído manualmente.");
+            }
+            pu.setCargo(dto.cargo());
+        }
+
+        if (dto.papel() != null) {
+            if (!dto.papel().isAtribuivel()) {
+                throw new RuntimeException("Este papel não pode ser atribuído manualmente.");
+            }
+            String nomePapel = dto.papel().name();
+            Papel novoPapel = papelRepository.findByNome(nomePapel)
+                    .orElseThrow(() -> new RuntimeException("Papel inexistente."));
+            pu.setPapel(novoPapel);
+        }
+
+        ProjetoUsuario atualizado = projetoUsuarioRepository.save(pu);
+        return new MembroResponseDTO(
+                atualizado.getUsuario().getId(),
+                atualizado.getUsuario().getNome(),
+                atualizado.getUsuario().getEmail(),
+                atualizado.getCargo(),
+                atualizado.getPapel().getNome()
+        );
+    }
+
+    @Transactional
+    public void validarPermissaoGerente(Long projetoId, long usuarioId) {
+        ProjetoUsuario pu = projetoUsuarioRepository
+                .findByProjetoIdAndUsuarioId(projetoId, usuarioId)
+                .orElseThrow(() -> new RuntimeException("Você não é membro deste projeto."));
+        if (!pu.getPapel().getNome().equals(PapelProjeto.GERENTE.name())) {
+            throw new RuntimeException("Apenas o gerente pode realizar esta ação.");
+        }
     }
 
     private Usuario buscarUsuarioPorEmail(String email) {

@@ -1,6 +1,12 @@
 package br.com.avia.avia_api.controller;
 
-import br.com.avia.avia_api.dto.projeto.*;
+import br.com.avia.avia_api.dto.projeto.AtualizarMembroRequestDTO;
+import br.com.avia.avia_api.dto.projeto.AtualizarProjetoRequestDTO;
+import br.com.avia.avia_api.dto.projeto.AdicionarMembroProjetoRequestDTO;
+import br.com.avia.avia_api.dto.projeto.CriarProjetoRequestDTO;
+import br.com.avia.avia_api.dto.projeto.MembroResponseDTO;
+import br.com.avia.avia_api.dto.projeto.ProjetoResponseDTO;
+import br.com.avia.avia_api.dto.projeto.RemoverMembroRequestDTO;
 import br.com.avia.avia_api.service.ProjetoService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -87,6 +93,16 @@ public class ProjetoController {
         String emailGerente = jwt.getSubject();
         String nomeMembro = projetoService.removerMembroDoProjeto(id, dto, emailGerente);
         Map<String, String> resposta = Map.of("mensagem", nomeMembro + " foi removido(a)");
-        return new ResponseEntity<>(resposta, HttpStatus.CREATED);
+        return ResponseEntity.ok(resposta);
+    }
+
+    @PatchMapping("/{id}/membros/{usuarioId}")
+    public ResponseEntity<MembroResponseDTO> atualizarMembro(@PathVariable Long id,
+                                                             @PathVariable Long usuarioId,
+                                                             @RequestBody AtualizarMembroRequestDTO dto,
+                                                             @AuthenticationPrincipal Jwt jwt) {
+        String emailGerente = jwt.getSubject();
+        MembroResponseDTO atualizado = projetoService.atualizarMembroDoProjeto(id, usuarioId, dto, emailGerente);
+        return ResponseEntity.ok(atualizado);
     }
 }

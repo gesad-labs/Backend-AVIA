@@ -6,6 +6,7 @@ public record MembroResponseDTO(
         long id,
         String nome,
         String email,
-        CargoProjeto cargo
+        CargoProjeto cargo,
+        String papel
 ) {
 }
