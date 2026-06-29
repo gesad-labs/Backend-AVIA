@@ -29,7 +29,8 @@ public class TarefasController {
             @RequestBody @Valid CriarTarefaRequestDTO dto,
             @AuthenticationPrincipal Jwt jwt
     ) {
-        TarefaResponseDTO tarefa = tarefaService.criarTarefa(projetoId, dto);
+        String emailMembro = jwt.getSubject();
+        TarefaResponseDTO tarefa = tarefaService.criarTarefa(projetoId, dto, emailMembro);
         return new ResponseEntity<>(tarefa, HttpStatus.CREATED);
     }
 
@@ -89,8 +90,9 @@ public class TarefasController {
             @RequestBody @Valid EditarTarefaRequestDTO dto,
             @AuthenticationPrincipal Jwt jwt
     ) {
+        String emailMembro = jwt.getSubject();
         TarefaResponseDTO tarefa =
-                tarefaService.editarTarefa(projetoId, tarefaId, dto);
+                tarefaService.editarTarefa(projetoId, tarefaId, dto, emailMembro);
 
         return ResponseEntity.ok(tarefa);
     }
@@ -102,8 +104,9 @@ public class TarefasController {
             @RequestBody AtualizarSprintTarefaRequestDTO dto,
             @AuthenticationPrincipal Jwt jwt
     ) {
+        String emailMembro = jwt.getSubject();
         TarefaResponseDTO tarefa =
-                tarefaService.atualizarSprint(projetoId, tarefaId, dto);
+                tarefaService.atualizarSprint(projetoId, tarefaId, dto, emailMembro);
 
         return ResponseEntity.ok(tarefa);
     }
@@ -114,7 +117,9 @@ public class TarefasController {
             @PathVariable Long tarefaId,
             @AuthenticationPrincipal Jwt jwt
     ) {
-        tarefaService.deletarTarefa(projetoId, tarefaId);
+        String emailMembro = jwt.getSubject();
+
+        tarefaService.deletarTarefa(projetoId, tarefaId, emailMembro);
         return ResponseEntity.noContent().build();
     }
 

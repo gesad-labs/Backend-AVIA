@@ -12,23 +12,32 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 
 @Service
 public class TarefaService {
 
+    private final UsuarioRepository usuarioRepository;
+    private final ProjetoUsuarioRepository projetoUsuarioRepository;
     private final TarefaRepository tarefaRepository;
     private final SprintRepository sprintRepository;
 
     public TarefaService(
-            TarefaRepository tarefaRepository,
+            UsuarioRepository usuarioRepository, ProjetoUsuarioRepository projetoUsuarioRepository, TarefaRepository tarefaRepository,
             SprintRepository sprintRepository
     ) {
+        this.usuarioRepository = usuarioRepository;
+        this.projetoUsuarioRepository = projetoUsuarioRepository;
         this.tarefaRepository = tarefaRepository;
         this.sprintRepository = sprintRepository;
     }
 
     @Transactional
-    public TarefaResponseDTO criarTarefa(Long projetoId, CriarTarefaRequestDTO dto) {
+    public TarefaResponseDTO criarTarefa(Long projetoId, CriarTarefaRequestDTO dto,
+                                         String emailMembro) {
+        Usuario membro = buscarUsuarioPorEmail(emailMembro);
+
+        verificarPermissao(projetoId, membro.getId(), "CRIARTAREFAS");
 
         Long sprintId = dto.sprintId();
         Long tarefaParenteId = dto.tarefaParenteId();
@@ -64,7 +73,11 @@ public class TarefaService {
     }
 
     @Transactional
-    public void deletarTarefa(Long projetoId, Long tarefaId) {
+    public void deletarTarefa(Long projetoId, Long tarefaId, String emailMembro) {
+        Usuario membro = buscarUsuarioPorEmail(emailMembro);
+
+        verificarPermissao(projetoId, membro.getId(), "EXCLUIRTAREFAS");
+
         Tarefa tarefa = buscarTarefaDoProjeto(projetoId, tarefaId);
         tarefaRepository.delete(tarefa);
     }
@@ -101,7 +114,11 @@ public class TarefaService {
     }
 
     @Transactional
-    public TarefaResponseDTO editarTarefa(Long projetoId, Long tarefaId, EditarTarefaRequestDTO dto) {
+    public TarefaResponseDTO editarTarefa(Long projetoId, Long tarefaId, EditarTarefaRequestDTO dto,
+                                          String emailMembro) {
+        Usuario membro = buscarUsuarioPorEmail(emailMembro);
+
+        verificarPermissao(projetoId, membro.getId(), "EDITARTAREFAS");
 
         Tarefa tarefa = buscarTarefaDoProjeto(projetoId, tarefaId);
 
@@ -125,7 +142,12 @@ public class TarefaService {
     }
 
     @Transactional
-    public TarefaResponseDTO atualizarSprint(Long projetoId, Long tarefaId, AtualizarSprintTarefaRequestDTO dto) {
+    public TarefaResponseDTO atualizarSprint(Long projetoId, Long tarefaId, AtualizarSprintTarefaRequestDTO dto,
+                                             String emailMembro) {
+        Usuario membro = buscarUsuarioPorEmail(emailMembro);
+
+        verificarPermissao(projetoId, membro.getId(), "MOVERTAREFAS");
+
         Tarefa tarefa = buscarTarefaDoProjeto(projetoId, tarefaId);
 
         Long sprintId = dto.sprintId();
@@ -178,4 +200,21 @@ public class TarefaService {
 
         return tarefa;
     }
+
+    private Usuario buscarUsuarioPorEmail(String email) {
+        return usuarioRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Usuário autenticado não encontrado."));
+    }
+
+    private void verificarPermissao(Long projetoId, Long usuarioId, String permissaoLabel){
+        Papel membroPapel = projetoUsuarioRepository.findPapelByProjetoIdAndUsuarioId(projetoId, usuarioId);
+        Set<Permissao> membroPermissoes = membroPapel.getPermissoes();
+
+        boolean possuiPermissao = membroPermissoes.stream()
+                .anyMatch(p -> p.getDescricao().equals(permissaoLabel));
+
+        if(!possuiPermissao)
+            throw new RuntimeException("Você não tem autorização para isso.");
+    }
+
 }

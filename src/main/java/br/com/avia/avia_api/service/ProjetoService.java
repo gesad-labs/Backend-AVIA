@@ -135,7 +135,11 @@ public class ProjetoService {
     }
 
     @Transactional
-    public void adicionarMembroAoProjeto(Long id, AdicionarMembroProjetoRequestDTO dto, String emailMembro) {
+    public void adicionarMembroAoProjeto(Long projetoId, AdicionarMembroProjetoRequestDTO dto, String emailMembro) {
+        Usuario membro = buscarUsuarioPorEmail(emailMembro);
+
+        verificarPermissao(projetoId, membro.getId(), "ADICIONARMEMBROS");
+
         if (!dto.cargo().isAtribuivel()) {
             throw new RuntimeException("Este cargo não pode ser atribuído manualmente.");
         }
@@ -143,23 +147,12 @@ public class ProjetoService {
             throw new RuntimeException("Este papel não pode ser atribuído manualmente.");
         }
 
-        Usuario membro = buscarUsuarioPorEmail(emailMembro);
-
-        Papel membroPapel = projetoUsuarioRepository.findPapelByProjetoIdAndUsuarioId(id, membro.getId());
-        Set<Permissao> membroPermissoes = membroPapel.getPermissoes();
-
-        boolean possuiPermissao = membroPermissoes.stream()
-                .anyMatch(p -> p.getDescricao().equals("ADICIONARMEMBROS"));
-
-        if(!possuiPermissao)
-            throw new RuntimeException("Você não tem autorização para isso.");
-
         Usuario novoMembro = buscarUsuarioPorEmail(dto.emailUsuario());
 
-        Projeto projeto = projetoRepository.findById(id)
+        Projeto projeto = projetoRepository.findById(projetoId)
                 .orElseThrow(() -> new RuntimeException("Projeto não encontrado."));
 
-        boolean jaEhMembro = projetoUsuarioRepository.existsByProjetoIdAndUsuarioId(id, novoMembro.getId());
+        boolean jaEhMembro = projetoUsuarioRepository.existsByProjetoIdAndUsuarioId(projetoId, novoMembro.getId());
         if (jaEhMembro) {
             throw new RuntimeException("Este usuário já é membro do projeto.");
         }
@@ -175,26 +168,19 @@ public class ProjetoService {
     }
 
     @Transactional
-    public String removerMembroDoProjeto(Long id, RemoverMembroRequestDTO dto, String emailMembro) {
+    public String removerMembroDoProjeto(Long projetoId, RemoverMembroRequestDTO dto, String emailMembro) {
         //Membro que solicita a operação de exclusão
         Usuario membroSolicitante = buscarUsuarioPorEmail(emailMembro);
 
-        Papel membroPapel = projetoUsuarioRepository.findPapelByProjetoIdAndUsuarioId(id, membroSolicitante.getId());
-        Set<Permissao> membroPermissoes = membroPapel.getPermissoes();
-
-        boolean possuiPermissao = membroPermissoes.stream()
-                .anyMatch(p -> p.getDescricao().equals("REMOVERMEMBROS"));
-
-        if(!possuiPermissao)
-            throw new RuntimeException("Você não tem autorização para isso.");
+        verificarPermissao(projetoId, membroSolicitante.getId(), "REMOVERMEMBROS");
 
         //Membro a ser removido
         Usuario membro = buscarUsuarioPorEmail(dto.emailMembro());
 
-        projetoRepository.findById(id)
+        projetoRepository.findById(projetoId)
                 .orElseThrow(() -> new RuntimeException("Projeto não encontrado."));
 
-        boolean ehMembro = projetoUsuarioRepository.existsByProjetoIdAndUsuarioId(id, membro.getId());
+        boolean ehMembro = projetoUsuarioRepository.existsByProjetoIdAndUsuarioId(projetoId, membro.getId());
         if (!ehMembro) {
             throw new RuntimeException("Este usuário não é membro do projeto.");
         }
@@ -222,4 +208,16 @@ public class ProjetoService {
                 projeto.getTipoEstimativa()
         );
     }
+
+    private void verificarPermissao(Long projetoId, Long usuarioId, String permissaoLabel){
+        Papel membroPapel = projetoUsuarioRepository.findPapelByProjetoIdAndUsuarioId(projetoId, usuarioId);
+        Set<Permissao> membroPermissoes = membroPapel.getPermissoes();
+
+        boolean possuiPermissao = membroPermissoes.stream()
+                .anyMatch(p -> p.getDescricao().equals(permissaoLabel));
+
+        if(!possuiPermissao)
+            throw new RuntimeException("Você não tem autorização para isso.");
+    }
+
 }
