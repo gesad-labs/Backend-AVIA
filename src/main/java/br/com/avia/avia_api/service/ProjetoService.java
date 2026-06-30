@@ -97,13 +97,37 @@ public class ProjetoService {
         List<ProjetoUsuario> membros = projetoUsuarioRepository.findMembrosByProjetoId(idProjeto);
 
         return membros.stream()
-                .map(membro -> new MembroResponseDTO(
-                        membro.getUsuario().getId(),
-                        membro.getUsuario().getNome(),
-                        membro.getUsuario().getEmail(),
-                        membro.getCargo()
-                ))
+                .map(this::converterMembroParaDTO)
                 .collect(Collectors.toList());
+    }
+
+    @Transactional
+    public MembroResponseDTO atualizarMembroDoProjeto(Long projetoId, Long usuarioAlvoId,
+                                                       AtualizarMembroRequestDTO dto, String emailSolicitante) {
+        Usuario solicitante = buscarUsuarioPorEmail(emailSolicitante);
+        verificarPermissao(projetoId, solicitante.getId(), "ADICIONARMEMBROS");
+
+        ProjetoUsuario pu = projetoUsuarioRepository.findByProjetoIdAndUsuarioId(projetoId, usuarioAlvoId)
+                .orElseThrow(() -> new RuntimeException("Membro não encontrado no projeto."));
+
+        if (dto.cargo() != null) {
+            if (!dto.cargo().isAtribuivel()) {
+                throw new RuntimeException("Este cargo não pode ser atribuído manualmente.");
+            }
+            pu.setCargo(dto.cargo());
+        }
+
+        if (dto.papel() != null) {
+            if (!dto.papel().isAtribuivel()) {
+                throw new RuntimeException("Este papel não pode ser atribuído manualmente.");
+            }
+            Papel novoPapel = papelRepository.findByNome(dto.papel().name())
+                    .orElseThrow(() -> new RuntimeException("Papel inexistente."));
+            pu.setPapel(novoPapel);
+        }
+
+        projetoUsuarioRepository.save(pu);
+        return converterMembroParaDTO(pu);
     }
 
     @Transactional
@@ -207,6 +231,20 @@ public class ProjetoService {
                 projeto.getId(),
                 projeto.getNome(),
                 projeto.getTipoEstimativa()
+        );
+    }
+
+    private MembroResponseDTO converterMembroParaDTO(ProjetoUsuario pu) {
+        PapelProjeto papelEnum = null;
+        if (pu.getPapel() != null) {
+            try { papelEnum = PapelProjeto.deString(pu.getPapel().getNome()); } catch (Exception ignored) {}
+        }
+        return new MembroResponseDTO(
+                pu.getUsuario().getId(),
+                pu.getUsuario().getNome(),
+                pu.getUsuario().getEmail(),
+                pu.getCargo(),
+                papelEnum
         );
     }
 

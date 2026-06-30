@@ -10,6 +10,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface ProjetoUsuarioRepository extends JpaRepository<ProjetoUsuario, Long> {
     // Lista os projetos do usuário
@@ -17,8 +18,10 @@ public interface ProjetoUsuarioRepository extends JpaRepository<ProjetoUsuario, 
     List<Projeto> findProjetosByMembroId(@Param("usuarioId") Long usuarioId);
 
     // Lista os membros de um projeto
-    @Query("SELECT pu FROM ProjetoUsuario pu JOIN FETCH pu.usuario WHERE pu.projeto.id = :projetoId")
+    @Query("SELECT pu FROM ProjetoUsuario pu JOIN FETCH pu.usuario LEFT JOIN FETCH pu.papel WHERE pu.projeto.id = :projetoId")
     List<ProjetoUsuario> findMembrosByProjetoId(@Param("projetoId") Long projetoId);
+
+    Optional<ProjetoUsuario> findByProjetoIdAndUsuarioId(Long projetoId, Long usuarioId);
 
     @Query("SELECT pu.papel FROM ProjetoUsuario pu WHERE pu.projeto.id = :projetoId AND pu.usuario.id = :usuarioId")
     Papel findPapelByProjetoIdAndUsuarioId(@Param("projetoId") Long projetoId,
