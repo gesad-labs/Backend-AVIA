@@ -1,5 +1,6 @@
 package br.com.avia.avia_api.service;
 
+import br.com.avia.avia_api.dto.permissao.PermissoesMembroRequestDTO;
 import br.com.avia.avia_api.dto.projeto.*;
 import br.com.avia.avia_api.entity.*;
 import br.com.avia.avia_api.enums.CargoProjeto;
@@ -12,8 +13,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -193,7 +192,7 @@ public class ProjetoService {
     }
 
     @Transactional
-    public void editarPermissaoMembro(Long projetoId, Long usuarioId, EditarPermissoesMembroRequestDTO dto,
+    public void editarPermissoesMembro(Long projetoId, Long usuarioId, PermissoesMembroRequestDTO dto,
                                       String emailGerente){
         Usuario gerente = buscarUsuarioPorEmail(emailGerente);
         validarPermissaoGerente(projetoId, gerente.getId());
@@ -214,6 +213,35 @@ public class ProjetoService {
 
         pu.getPermissoes().clear();
         pu.getPermissoes().addAll(novasPermissoes);
+        projetoUsuarioRepository.save(pu);
+    }
+
+    public List<PermissoesUsuarioProjeto> visualizarPermissoesMembro(Long projetoId, Long usuarioId, String emailMembro){
+        buscarUsuarioPorEmail(emailMembro);
+
+        ProjetoUsuario pu = projetoUsuarioRepository.findByUsuarioIdAndProjetoId(usuarioId, projetoId)
+                .orElseThrow(() -> new RuntimeException("Usuário não está no projeto."));
+
+        List<Permissao> permissoes = pu.getPermissoes();
+
+        return permissoes.stream()
+                .map(permissao -> PermissoesUsuarioProjeto.deString(permissao.getDescricao()))
+                .toList();
+    }
+
+    @Transactional
+    public void restaurarPermissoesPadrao(Long projetoId, Long usuarioId, String emailGerente){
+        Usuario gerente = buscarUsuarioPorEmail(emailGerente);
+        validarPermissaoGerente(projetoId, gerente.getId());
+
+        ProjetoUsuario pu = projetoUsuarioRepository.findByUsuarioIdAndProjetoId(usuarioId, projetoId)
+                .orElseThrow(() -> new RuntimeException("Usuário não está no projeto."));
+
+        Papel papel = projetoUsuarioRepository.findPapelByProjetoIdAndUsuarioId(projetoId, usuarioId);
+
+        pu.getPermissoes().clear();
+        pu.getPermissoes().addAll(papel.getPermissoes());
+
         projetoUsuarioRepository.save(pu);
     }
 
@@ -239,8 +267,9 @@ public class ProjetoService {
     }
 
     private void verificarPermissao(Long projetoId, Long usuarioId, String permissaoLabel){
-        Papel membroPapel = projetoUsuarioRepository.findPapelByProjetoIdAndUsuarioId(projetoId, usuarioId);
-        List<Permissao> membroPermissoes = membroPapel.getPermissoes();
+        ProjetoUsuario membro = projetoUsuarioRepository.findByUsuarioIdAndProjetoId(usuarioId, projetoId)
+                .orElseThrow(() -> new RuntimeException("Usuário não é membro do projeto."));
+        List<Permissao> membroPermissoes = membro.getPermissoes();
 
         boolean possuiPermissao = membroPermissoes.stream()
                 .anyMatch(p -> p.getDescricao().equals(permissaoLabel));
