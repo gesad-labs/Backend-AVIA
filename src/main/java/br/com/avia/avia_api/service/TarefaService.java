@@ -209,7 +209,7 @@ public class TarefaService {
 
     private void verificarPermissao(Long projetoId, Long usuarioId, String permissaoLabel){
         Papel membroPapel = projetoUsuarioRepository.findPapelByProjetoIdAndUsuarioId(projetoId, usuarioId);
-        Set<Permissao> membroPermissoes = membroPapel.getPermissoes();
+        List<Permissao> membroPermissoes = membroPapel.getPermissoes();
 
         boolean possuiPermissao = membroPermissoes.stream()
                 .anyMatch(p -> p.getDescricao().equals(permissaoLabel));

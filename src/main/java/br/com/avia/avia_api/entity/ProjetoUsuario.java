@@ -7,6 +7,11 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
 @Entity
 @Table(name = "projeto_usuario")
 @Getter
@@ -35,6 +40,14 @@ public class ProjetoUsuario {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "papel_id")
     private Papel papel;
+
+    @ManyToMany(fetch = FetchType.LAZY, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
+    @JoinTable(
+            name = "projeto_usuario_permissao",
+            joinColumns = @JoinColumn(name = "projeto_usuario_id"),
+            inverseJoinColumns = @JoinColumn(name = "permissao_id")
+    )
+    private List<Permissao> permissoes = new ArrayList<>();
 
     public ProjetoUsuario(CargoProjeto cargo, Usuario usuario, Projeto projeto, Papel papel) {
         this.cargo = cargo;

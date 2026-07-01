@@ -89,6 +89,16 @@ public class ProjetoController {
         String emailGerente = jwt.getSubject();
         String nomeMembro = projetoService.removerMembroDoProjeto(id, dto, emailGerente);
         Map<String, String> resposta = Map.of("mensagem", nomeMembro + " foi removido(a)");
-        return new ResponseEntity<>(resposta, HttpStatus.CREATED);
+        return new ResponseEntity<>(resposta, HttpStatus.OK);
+    }
+
+    @PatchMapping("/{projeto_id}/membros/{usuario_id}/permissoes")
+    public void editarPermissoes(@PathVariable("projeto_id") Long projetoId,
+                                 @PathVariable("usuario_id") Long usuarioId,
+                                 @RequestBody @Valid EditarPermissoesMembroRequestDTO dto,
+                                 @AuthenticationPrincipal Jwt jwt){
+        String email = jwt.getSubject();
+
+        projetoService.editarPermissaoMembro(projetoId, usuarioId, dto, email);
     }
 }
