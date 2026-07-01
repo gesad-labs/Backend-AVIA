@@ -28,9 +28,9 @@ public enum PermissoesUsuarioProjeto {
     @JsonCreator
     public static PermissoesUsuarioProjeto deString(String valor){
         if (valor == null) return null;
-        for (PermissoesUsuarioProjeto permissoao : PermissoesUsuarioProjeto.values()) {
-            if (permissoao.getNome().equalsIgnoreCase(valor) || permissoao.name().equalsIgnoreCase(valor)) {
-                return permissoao;
+        for (PermissoesUsuarioProjeto permissao : PermissoesUsuarioProjeto.values()) {
+            if (permissao.getNome().equalsIgnoreCase(valor) || permissao.name().equalsIgnoreCase(valor)) {
+                return permissao;
             }
         }
         throw new IllegalArgumentException("Permissão desconhecido: " + valor);

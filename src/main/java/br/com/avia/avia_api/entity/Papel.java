@@ -5,7 +5,9 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 @Getter
@@ -29,7 +31,7 @@ public class Papel {
             joinColumns = @JoinColumn(name = "papel_id"),
             inverseJoinColumns = @JoinColumn(name = "permissao_id")
     )
-    private Set<Permissao> permissoes = new HashSet<>();
+    private List<Permissao> permissoes = new ArrayList<>();
 
     public Papel() {
     }
