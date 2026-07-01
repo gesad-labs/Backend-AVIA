@@ -207,8 +207,6 @@ public class ProjetoService {
             Permissao novaPermissao = permissaoRepository.findByDescricao(descricao);
             if (novaPermissao != null)
                 novasPermissoes.add(novaPermissao);
-
-            System.out.println(descricao);
         }
 
         pu.getPermissoes().clear();
