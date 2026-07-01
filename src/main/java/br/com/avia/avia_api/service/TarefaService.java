@@ -68,6 +68,12 @@ public class TarefaService {
                 Boolean.TRUE.equals(dto.impedimento())
         );
 
+        if (dto.responsavelId() != null) {
+            Usuario responsavel = usuarioRepository.findById(dto.responsavelId())
+                    .orElseThrow(() -> new RuntimeException("Responsável não encontrado."));
+            tarefa.setResponsavel(responsavel);
+        }
+
         Tarefa tarefaSalva = tarefaRepository.save(tarefa);
 
         return converterParaDTO(tarefaSalva);
@@ -139,6 +145,16 @@ public class TarefaService {
             tarefa.setPrioridade(dto.prioridade());
         }
 
+        if (dto.responsavelId() != null) {
+            if (dto.responsavelId() == -1L) {
+                tarefa.setResponsavel(null);
+            } else {
+                Usuario responsavel = usuarioRepository.findById(dto.responsavelId())
+                        .orElseThrow(() -> new RuntimeException("Responsável não encontrado."));
+                tarefa.setResponsavel(responsavel);
+            }
+        }
+
         return converterParaDTO(tarefaRepository.save(tarefa));
     }
 
@@ -178,6 +194,7 @@ public class TarefaService {
     }
 
     private TarefaResponseDTO converterParaDTO(Tarefa tarefa) {
+        Usuario responsavel = tarefa.getResponsavel();
         return new TarefaResponseDTO(
                 tarefa.getId(),
                 tarefa.getSprintId(),
@@ -187,7 +204,9 @@ public class TarefaService {
                 tarefa.getStatus(),
                 tarefa.getPrioridade(),
                 tarefa.getTarefaParenteId(),
-                tarefa.getImpedimento()
+                tarefa.getImpedimento(),
+                responsavel != null ? responsavel.getId()   : null,
+                responsavel != null ? responsavel.getNome() : null
         );
     }
 
