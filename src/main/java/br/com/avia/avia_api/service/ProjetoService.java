@@ -50,8 +50,10 @@ public class ProjetoService {
         String papelGerente = PapelProjeto.GERENTE.name();
         Papel papel = papelRepository.findByNome(papelGerente)
                 .orElseThrow(() -> new RuntimeException("Papel inexistente."));
+        List<Permissao> permissoesGerente = new ArrayList<>(papel.getPermissoes());
 
         ProjetoUsuario vinculoGerente = new ProjetoUsuario(CargoProjeto.GERENTE, usuarioLogado, projetoSalvo, papel);
+        vinculoGerente.setPermissoes(permissoesGerente);
         projetoUsuarioRepository.save(vinculoGerente);
 
         return converterParaDTO(projetoSalvo);
@@ -187,8 +189,10 @@ public class ProjetoService {
         Papel papel = papelRepository.findByNome(nomePapel)
                 .orElseThrow(() -> new RuntimeException("Papel inexistente."));
 
+        List<Permissao> permissoesDoNovoMembro = new ArrayList<>(papel.getPermissoes());
+
         ProjetoUsuario pu = new ProjetoUsuario(dto.cargo(), novoMembro, projeto, papel);
-        pu.setPermissoes(papel.getPermissoes());
+        pu.setPermissoes(permissoesDoNovoMembro);
         projetoUsuarioRepository.save(pu);
 
         notificacaoService.notificarUsuarioAdicionadoAoProjeto(pu);
