@@ -54,6 +54,10 @@ public class Tarefa {
     @Column(name = "impedimento")
     private Boolean impedimento;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "responsavel_id")
+    private Usuario responsavel;
+
     public Tarefa(Long projetoId,
                   Long sprintId,
                   String titulo,

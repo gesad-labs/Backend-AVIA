@@ -20,6 +20,7 @@ public class Notificacao {
     @Column(name = "id")
     @Getter private Long id;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "tipo")
     @Getter @Setter private TipoNotificacao tipo;
 

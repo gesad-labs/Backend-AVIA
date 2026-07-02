@@ -2,7 +2,6 @@ package br.com.avia.avia_api.dto.tarefa;
 
 import br.com.avia.avia_api.enums.PrioridadeTarefa;
 import br.com.avia.avia_api.enums.StatusTarefa;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
@@ -25,5 +24,7 @@ public record CriarTarefaRequestDTO(
 
         Long tarefaParenteId,
 
-        Boolean impedimento
+        Boolean impedimento,
+
+        Long responsavelId
 ) {}

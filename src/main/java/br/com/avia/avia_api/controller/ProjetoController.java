@@ -86,6 +86,16 @@ public class ProjetoController {
         return new ResponseEntity<>(resposta, HttpStatus.CREATED);
     }
 
+    @PatchMapping("/{id}/membros/{usuarioId}")
+    public ResponseEntity<MembroResponseDTO> atualizarMembro(@PathVariable Long id,
+                                                              @PathVariable Long usuarioId,
+                                                              @RequestBody AtualizarMembroRequestDTO dto,
+                                                              @AuthenticationPrincipal Jwt jwt) {
+        String emailSolicitante = jwt.getSubject();
+        MembroResponseDTO atualizado = projetoService.atualizarMembroDoProjeto(id, usuarioId, dto, emailSolicitante);
+        return ResponseEntity.ok(atualizado);
+    }
+
     @DeleteMapping("/{id}/membros")
     public ResponseEntity<Map<String, String>> removerMembro(@PathVariable Long id,
                                                              @RequestBody @Valid RemoverMembroRequestDTO dto,

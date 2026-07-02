@@ -12,5 +12,7 @@ public record TarefaResponseDTO(
         StatusTarefa status,
         PrioridadeTarefa prioridade,
         Long tarefaParenteId,
-        Boolean impedimento
+        Boolean impedimento,
+        Long responsavelId,
+        String responsavelNome
 ) {}
