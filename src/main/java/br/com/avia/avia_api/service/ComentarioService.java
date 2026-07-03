@@ -48,6 +48,35 @@ public class ComentarioService {
                 .collect(Collectors.toList());
     }
 
+    @Transactional
+    public ComentarioResponseDTO alterarFlag(Long comentarioId) {
+        Comentario comentario = comentarioRepository.findById(comentarioId)
+                .orElseThrow(() -> new RuntimeException("Comentário não encontrado"));
+        comentario.setImpedimento(!comentario.isImpedimento());
+        return converterParaDTO(comentarioRepository.save(comentario));
+    }
+
+    @Transactional
+    public void deletarComentario(Long tarefaId, Long comentarioId) {
+        Comentario comentario = comentarioRepository.findById(comentarioId)
+                .orElseThrow(() -> new RuntimeException("Comentário não encontrado"));
+        if (!comentario.getTarefaId().equals(tarefaId)) {
+            throw new RuntimeException("Comentário não pertence a essa tarefa");
+        }
+        comentarioRepository.delete(comentario);
+    }
+
+    @Transactional
+    public ComentarioResponseDTO editarComentario(Long tarefaId, Long comentarioId, String novaDescricao) {
+        Comentario comentario = comentarioRepository.findById(comentarioId)
+                .orElseThrow(() -> new RuntimeException("Comentário não encontrado"));
+        if (!comentario.getTarefaId().equals(tarefaId)) {
+            throw new RuntimeException("Comentário não pertence a essa tarefa");
+        }
+        comentario.setDescricao(novaDescricao);
+        return converterParaDTO(comentarioRepository.save(comentario));
+    }
+
     private ComentarioResponseDTO converterParaDTO(Comentario comentario) {
         return new ComentarioResponseDTO(
                 comentario.getId(),

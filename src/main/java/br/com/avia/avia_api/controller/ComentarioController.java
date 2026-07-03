@@ -10,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
+import br.com.avia.avia_api.dto.comentario.EditarComentarioRequestDTO;
 
 import java.util.List;
 
@@ -44,5 +45,39 @@ public class ComentarioController {
     ) {
         List<ComentarioResponseDTO> comentarios = comentarioService.listarComentarios(tarefaId);
         return ResponseEntity.ok(comentarios);
+    }
+
+    @PatchMapping("/{projeto_id}/tarefas/{tarefa_id}/comentarios/{comentario_id}/flag")
+    public ResponseEntity<ComentarioResponseDTO> alterarFlag(
+            @PathVariable("projeto_id") Long projetoId,
+            @PathVariable("tarefa_id") Long tarefaId,
+            @PathVariable("comentario_id") Long comentarioId,
+            @AuthenticationPrincipal Jwt jwt
+    ) {
+        ComentarioResponseDTO comentario = comentarioService.alterarFlag(comentarioId);
+        return ResponseEntity.ok(comentario);
+    }
+
+    @DeleteMapping("/{projeto_id}/tarefas/{tarefa_id}/comentarios/{comentario_id}")
+    public ResponseEntity<Void> deletarComentario(
+            @PathVariable("projeto_id") Long projetoId,
+            @PathVariable("tarefa_id") Long tarefaId,
+            @PathVariable("comentario_id") Long comentarioId,
+            @AuthenticationPrincipal Jwt jwt
+    ) {
+        comentarioService.deletarComentario(tarefaId, comentarioId);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PatchMapping("/{projeto_id}/tarefas/{tarefa_id}/comentarios/{comentario_id}")
+    public ResponseEntity<ComentarioResponseDTO> editarComentario(
+            @PathVariable("projeto_id") Long projetoId,
+            @PathVariable("tarefa_id") Long tarefaId,
+            @PathVariable("comentario_id") Long comentarioId,
+            @RequestBody @Valid EditarComentarioRequestDTO dto,
+            @AuthenticationPrincipal Jwt jwt
+    ) {
+        ComentarioResponseDTO comentario = comentarioService.editarComentario(tarefaId, comentarioId, dto.descricao());
+        return ResponseEntity.ok(comentario);
     }
 }
