@@ -2,6 +2,7 @@ package br.com.avia.avia_api.dto.tarefa;
 
 import br.com.avia.avia_api.enums.PrioridadeTarefa;
 import br.com.avia.avia_api.enums.StatusTarefa;
+import java.util.List;
 
 public record TarefaResponseDTO(
         Long id,
@@ -13,6 +14,8 @@ public record TarefaResponseDTO(
         PrioridadeTarefa prioridade,
         Long tarefaParenteId,
         Boolean impedimento,
-        Long responsavelId,
-        String responsavelNome
+        List<ResponsavelDTO> responsaveis,
+        String tipo,
+        Integer subtarefasCount,
+        Integer anexosCount
 ) {}

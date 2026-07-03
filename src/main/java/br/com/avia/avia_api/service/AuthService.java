@@ -7,10 +7,12 @@ import br.com.avia.avia_api.entity.Usuario;
 import br.com.avia.avia_api.repository.TokenRecuperacaoSenhaRepository;
 import br.com.avia.avia_api.repository.UsuarioRepository;
 import br.com.avia.avia_api.security.TokenService;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -43,7 +45,7 @@ public class AuthService {
 
     public UsuarioResponse cadastrar(CadastroRequestDTO request) {
         if (usuarioRepository.existsByEmail(request.email())) {
-            throw new RuntimeException("E-mail já cadastrado");
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "E-mail já cadastrado.");
         }
 
         String senhaCriptografada = passwordEncoder.encode(request.senha());

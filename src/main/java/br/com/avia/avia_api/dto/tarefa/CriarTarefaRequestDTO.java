@@ -4,6 +4,7 @@ import br.com.avia.avia_api.enums.PrioridadeTarefa;
 import br.com.avia.avia_api.enums.StatusTarefa;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import java.util.List;
 
 public record CriarTarefaRequestDTO(
 
@@ -26,5 +27,7 @@ public record CriarTarefaRequestDTO(
 
         Boolean impedimento,
 
-        Long responsavelId
+        List<Long> responsaveisIds,
+
+        String tipo
 ) {}

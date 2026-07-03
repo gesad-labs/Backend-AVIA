@@ -4,14 +4,17 @@ import br.com.avia.avia_api.dto.projeto.*;
 import br.com.avia.avia_api.entity.*;
 import br.com.avia.avia_api.enums.CargoProjeto;
 import br.com.avia.avia_api.enums.PapelProjeto;
+import br.com.avia.avia_api.enums.PermissoesUsuarioProjeto;
 import br.com.avia.avia_api.exception.permissao.PermissaoNegadaException;
 import br.com.avia.avia_api.repository.PapelRepository;
+import br.com.avia.avia_api.repository.PermissaoRepository;
 import br.com.avia.avia_api.repository.ProjetoRepository;
 import br.com.avia.avia_api.repository.ProjetoUsuarioRepository;
 import br.com.avia.avia_api.repository.UsuarioRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -19,17 +22,20 @@ import java.util.stream.Collectors;
 @Service
 public class ProjetoService {
 
+    private final PermissaoRepository permissaoRepository;
     private final ProjetoRepository projetoRepository;
     private final UsuarioRepository usuarioRepository;
     private final ProjetoUsuarioRepository projetoUsuarioRepository;
     private final PapelRepository papelRepository;
     private final NotificacaoService notificacaoService;
 
-    public ProjetoService(ProjetoRepository projetoRepository,
+    public ProjetoService(PermissaoRepository permissaoRepository,
+                          ProjetoRepository projetoRepository,
                           UsuarioRepository usuarioRepository,
                           ProjetoUsuarioRepository projetoUsuarioRepository,
                           PapelRepository papelRepository,
                           NotificacaoService notificacaoService) {
+        this.permissaoRepository = permissaoRepository;
         this.projetoRepository = projetoRepository;
         this.usuarioRepository = usuarioRepository;
         this.projetoUsuarioRepository = projetoUsuarioRepository;
@@ -103,7 +109,7 @@ public class ProjetoService {
 
     @Transactional
     public MembroResponseDTO atualizarMembroDoProjeto(Long projetoId, Long usuarioAlvoId,
-                                                       AtualizarMembroRequestDTO dto, String emailSolicitante) {
+            AtualizarMembroRequestDTO dto, String emailSolicitante) {
         Usuario solicitante = buscarUsuarioPorEmail(emailSolicitante);
         verificarPermissao(projetoId, solicitante.getId(), "ADICIONARMEMBROS");
 
@@ -143,7 +149,7 @@ public class ProjetoService {
 
     @Transactional
     public ProjetoResponseDTO editarInformacoesDoProjeto(Long projetoId, AtualizarProjetoRequestDTO dto,
-                                                         String emailUsuario) {
+            String emailUsuario) {
         Usuario usuarioLogado = buscarUsuarioPorEmail(emailUsuario);
 
         validarPermissaoGerente(projetoId, usuarioLogado.getId());
@@ -194,12 +200,10 @@ public class ProjetoService {
 
     @Transactional
     public String removerMembroDoProjeto(Long projetoId, RemoverMembroRequestDTO dto, String emailMembro) {
-        //Membro que solicita a operação de exclusão
         Usuario membroSolicitante = buscarUsuarioPorEmail(emailMembro);
 
         verificarPermissao(projetoId, membroSolicitante.getId(), "REMOVERMEMBROS");
 
-        //Membro a ser removido
         Usuario membro = buscarUsuarioPorEmail(dto.emailMembro());
 
         projetoRepository.findById(projetoId)
@@ -213,11 +217,64 @@ public class ProjetoService {
         return membro.getNome();
     }
 
-    private void validarPermissaoGerente(Long projetoId, long usuarioId) {
+    @Transactional
+    public void editarPermissoesMembro(Long projetoId, Long usuarioId, PermissoesMembroRequestDTO dto,
+            String emailGerente) {
+        Usuario gerente = buscarUsuarioPorEmail(emailGerente);
+        validarPermissaoGerente(projetoId, gerente.getId());
+
+        ProjetoUsuario pu = projetoUsuarioRepository.findByUsuarioIdAndProjetoId(usuarioId, projetoId)
+                .orElseThrow(() -> new RuntimeException("Usuário não está no projeto."));
+
+        List<Permissao> novasPermissoes = new ArrayList<>();
+
+        for (PermissoesUsuarioProjeto permissaoEnum : dto.permissoes()) {
+            String descricao = permissaoEnum.name();
+            Permissao novaPermissao = permissaoRepository.findByDescricao(descricao);
+            if (novaPermissao != null)
+                novasPermissoes.add(novaPermissao);
+        }
+
+        pu.getPermissoes().clear();
+        pu.getPermissoes().addAll(novasPermissoes);
+        projetoUsuarioRepository.save(pu);
+    }
+
+    public List<PermissoesUsuarioProjeto> visualizarPermissoesMembro(Long projetoId, Long usuarioId,
+            String emailMembro) {
+        buscarUsuarioPorEmail(emailMembro);
+
+        ProjetoUsuario pu = projetoUsuarioRepository.findByUsuarioIdAndProjetoId(usuarioId, projetoId)
+                .orElseThrow(() -> new RuntimeException("Usuário não está no projeto."));
+
+        List<Permissao> permissoes = pu.getPermissoes();
+
+        return permissoes.stream()
+                .map(permissao -> PermissoesUsuarioProjeto.deString(permissao.getDescricao()))
+                .toList();
+    }
+
+    @Transactional
+    public void restaurarPermissoesPadrao(Long projetoId, Long usuarioId, String emailGerente) {
+        Usuario gerente = buscarUsuarioPorEmail(emailGerente);
+        validarPermissaoGerente(projetoId, gerente.getId());
+
+        ProjetoUsuario pu = projetoUsuarioRepository.findByUsuarioIdAndProjetoId(usuarioId, projetoId)
+                .orElseThrow(() -> new RuntimeException("Usuário não está no projeto."));
+
+        Papel papel = projetoUsuarioRepository.findPapelByProjetoIdAndUsuarioId(projetoId, usuarioId);
+
+        pu.getPermissoes().clear();
+        pu.getPermissoes().addAll(papel.getPermissoes());
+
+        projetoUsuarioRepository.save(pu);
+    }
+
+    private void validarPermissaoGerente(Long projetoId, Long usuarioId) {
         Papel papelMembro = projetoUsuarioRepository.findPapelByProjetoIdAndUsuarioId(projetoId, usuarioId);
         boolean ehGerente = papelMembro.getNome().equalsIgnoreCase("GERENTE");
 
-        if(!ehGerente)
+        if (!ehGerente)
             throw new RuntimeException("Somente o gerente pode fazer isso.");
     }
 
@@ -230,32 +287,37 @@ public class ProjetoService {
         return new ProjetoResponseDTO(
                 projeto.getId(),
                 projeto.getNome(),
-                projeto.getTipoEstimativa()
-        );
+                projeto.getTipoEstimativa());
     }
 
     private MembroResponseDTO converterMembroParaDTO(ProjetoUsuario pu) {
         PapelProjeto papelEnum = null;
         if (pu.getPapel() != null) {
-            try { papelEnum = PapelProjeto.deString(pu.getPapel().getNome()); } catch (Exception ignored) {}
+            try {
+                papelEnum = PapelProjeto.deString(pu.getPapel().getNome());
+            } catch (Exception ignored) {
+            }
         }
         return new MembroResponseDTO(
                 pu.getUsuario().getId(),
                 pu.getUsuario().getNome(),
                 pu.getUsuario().getEmail(),
                 pu.getCargo(),
-                papelEnum
-        );
+                papelEnum);
     }
 
-    private void verificarPermissao(Long projetoId, Long usuarioId, String permissaoLabel){
-        Papel membroPapel = projetoUsuarioRepository.findPapelByProjetoIdAndUsuarioId(projetoId, usuarioId);
-        Set<Permissao> membroPermissoes = membroPapel.getPermissoes();
+    private void verificarPermissao(Long projetoId, Long usuarioId, String permissaoLabel) {
+        ProjetoUsuario membro = projetoUsuarioRepository.findByUsuarioIdAndProjetoId(usuarioId, projetoId)
+                .orElseThrow(() -> new RuntimeException("Usuário não é membro do projeto."));
 
-        boolean possuiPermissao = membroPermissoes.stream()
+        List<Permissao> permissoes = membro.getPermissoes().isEmpty()
+                ? new ArrayList<>(membro.getPapel().getPermissoes())
+                : membro.getPermissoes();
+
+        boolean possuiPermissao = permissoes.stream()
                 .anyMatch(p -> p.getDescricao().equals(permissaoLabel));
 
-        if(!possuiPermissao)
+        if (!possuiPermissao)
             throw new PermissaoNegadaException();
     }
 

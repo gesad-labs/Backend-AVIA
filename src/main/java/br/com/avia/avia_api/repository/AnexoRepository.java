@@ -11,4 +11,5 @@ public interface AnexoRepository extends JpaRepository<Anexo, Integer> {
 
     List<Anexo> findByTarefaId(long tarefaId);
 
+    int countByTarefaId(long tarefaId);
 }

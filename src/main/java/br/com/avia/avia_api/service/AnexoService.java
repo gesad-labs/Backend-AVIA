@@ -10,6 +10,8 @@ import br.com.avia.avia_api.repository.AnexoRepository;
 import br.com.avia.avia_api.repository.TarefaRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
 import br.com.avia.avia_api.exception.anexo.AnexoNaoEncontradoException;
 import br.com.avia.avia_api.exception.anexo.AnexoNaoPertenceATarefaException;
 
@@ -27,6 +29,14 @@ public class AnexoService {
     ) {
         this.anexoRepository = anexoRepository;
         this.tarefaRepository = tarefaRepository;
+    }
+
+    public List<AnexoResponseDTO> listarAnexos(Long projetoId, Long tarefaId) {
+        buscarTarefaDoProjeto(projetoId, tarefaId);
+        return anexoRepository.findByTarefaId(tarefaId)
+                .stream()
+                .map(this::converterParaDTO)
+                .toList();
     }
 
     @Transactional
