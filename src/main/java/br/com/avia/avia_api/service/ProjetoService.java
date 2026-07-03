@@ -211,10 +211,15 @@ public class ProjetoService {
         projetoRepository.findById(projetoId)
                 .orElseThrow(() -> new RuntimeException("Projeto não encontrado."));
 
+        ProjetoUsuario pu = projetoUsuarioRepository.findByProjetoIdAndUsuarioId(projetoId, membro.getId())
+                .orElseThrow(() -> new RuntimeException("Usuário não está no projeto."));
+
         boolean ehMembro = projetoUsuarioRepository.existsByProjetoIdAndUsuarioId(projetoId, membro.getId());
         if (!ehMembro) {
             throw new RuntimeException("Este usuário não é membro do projeto.");
         }
+
+        projetoUsuarioRepository.delete(pu);
 
         return membro.getNome();
     }
