@@ -12,7 +12,7 @@ import lombok.Setter;
 @Entity
 @Table(name = "comentarios")
 public class Comentario {
-    
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
@@ -27,6 +27,9 @@ public class Comentario {
     @Column(name = "projeto_usuario_id")
     @Getter @Setter private int projetoUsuarioId;
 
+    @Column(name = "impedimento")
+    @Getter @Setter private boolean impedimento;
+
     public Comentario() {
     }
 
@@ -34,5 +37,6 @@ public class Comentario {
         this.tarefaId = tarefaId;
         this.descricao = descricao;
         this.projetoUsuarioId = projetoUsuarioId;
+        this.impedimento = false;
     }
 }
