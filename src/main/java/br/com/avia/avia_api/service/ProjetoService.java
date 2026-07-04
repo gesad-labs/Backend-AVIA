@@ -126,7 +126,10 @@ public class ProjetoService {
             }
             Papel novoPapel = papelRepository.findByNome(dto.papel().name())
                     .orElseThrow(() -> new RuntimeException("Papel inexistente."));
+            List<Permissao> novasPermissoes = new ArrayList<>(novoPapel.getPermissoes());
             pu.setPapel(novoPapel);
+            pu.getPermissoes().clear();
+            pu.getPermissoes().addAll(novasPermissoes);
         }
 
         projetoUsuarioRepository.save(pu);

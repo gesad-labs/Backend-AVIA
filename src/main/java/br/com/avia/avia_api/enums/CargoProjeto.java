@@ -10,7 +10,7 @@ public enum CargoProjeto {
     SCRUMMASTER ("Scrum Master", true),
     DESENVOLVEDOR ("Desenvolvedor", true),
     QA ("QA", true),
-    ANALISTADEREQUISITO ("Analista de Requisito", true),
+    ANALISTADEREQUISITOS ("Analista de Requisitos", true),
     DESIGNERDEUIUX ("Designer de UI/UX", true),
     ARQUITETODESOFTWARE ("Arquiteto de Software", true),
     DEVOPS ("DevOps", true);
