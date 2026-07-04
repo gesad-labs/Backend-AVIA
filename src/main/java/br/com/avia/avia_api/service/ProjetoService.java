@@ -1,22 +1,18 @@
 package br.com.avia.avia_api.service;
 
+import br.com.avia.avia_api.dto.permissao.PermissoesMembroRequestDTO;
 import br.com.avia.avia_api.dto.projeto.*;
 import br.com.avia.avia_api.entity.*;
 import br.com.avia.avia_api.enums.CargoProjeto;
 import br.com.avia.avia_api.enums.PapelProjeto;
 import br.com.avia.avia_api.enums.PermissoesUsuarioProjeto;
 import br.com.avia.avia_api.exception.permissao.PermissaoNegadaException;
-import br.com.avia.avia_api.repository.PapelRepository;
-import br.com.avia.avia_api.repository.PermissaoRepository;
-import br.com.avia.avia_api.repository.ProjetoRepository;
-import br.com.avia.avia_api.repository.ProjetoUsuarioRepository;
-import br.com.avia.avia_api.repository.UsuarioRepository;
+import br.com.avia.avia_api.repository.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -29,8 +25,7 @@ public class ProjetoService {
     private final PapelRepository papelRepository;
     private final NotificacaoService notificacaoService;
 
-    public ProjetoService(PermissaoRepository permissaoRepository,
-                          ProjetoRepository projetoRepository,
+    public ProjetoService(PermissaoRepository permissaoRepository, ProjetoRepository projetoRepository,
                           UsuarioRepository usuarioRepository,
                           ProjetoUsuarioRepository projetoUsuarioRepository,
                           PapelRepository papelRepository,
@@ -55,8 +50,10 @@ public class ProjetoService {
         String papelGerente = PapelProjeto.GERENTE.name();
         Papel papel = papelRepository.findByNome(papelGerente)
                 .orElseThrow(() -> new RuntimeException("Papel inexistente."));
+        List<Permissao> permissoesGerente = new ArrayList<>(papel.getPermissoes());
 
         ProjetoUsuario vinculoGerente = new ProjetoUsuario(CargoProjeto.GERENTE, usuarioLogado, projetoSalvo, papel);
+        vinculoGerente.setPermissoes(permissoesGerente);
         projetoUsuarioRepository.save(vinculoGerente);
 
         return converterParaDTO(projetoSalvo);
@@ -192,7 +189,10 @@ public class ProjetoService {
         Papel papel = papelRepository.findByNome(nomePapel)
                 .orElseThrow(() -> new RuntimeException("Papel inexistente."));
 
+        List<Permissao> permissoesDoNovoMembro = new ArrayList<>(papel.getPermissoes());
+
         ProjetoUsuario pu = new ProjetoUsuario(dto.cargo(), novoMembro, projeto, papel);
+        pu.setPermissoes(permissoesDoNovoMembro);
         projetoUsuarioRepository.save(pu);
 
         notificacaoService.notificarUsuarioAdicionadoAoProjeto(pu);
@@ -209,10 +209,15 @@ public class ProjetoService {
         projetoRepository.findById(projetoId)
                 .orElseThrow(() -> new RuntimeException("Projeto não encontrado."));
 
+        ProjetoUsuario pu = projetoUsuarioRepository.findByProjetoIdAndUsuarioId(projetoId, membro.getId())
+                .orElseThrow(() -> new RuntimeException("Usuário não está no projeto."));
+
         boolean ehMembro = projetoUsuarioRepository.existsByProjetoIdAndUsuarioId(projetoId, membro.getId());
         if (!ehMembro) {
             throw new RuntimeException("Este usuário não é membro do projeto.");
         }
+
+        projetoUsuarioRepository.delete(pu);
 
         return membro.getNome();
     }

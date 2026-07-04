@@ -6,7 +6,7 @@ public record ComentarioResponseDTO(
         Long id,
         Long tarefaId,
         String descricao,
-        String autorNome,
-        String autorEmail,
+        Long projetoUsuarioId,
+        boolean impedimento,
         LocalDateTime criadoEm
 ) {}

@@ -4,15 +4,15 @@ import br.com.avia.avia_api.dto.auth.*;
 import br.com.avia.avia_api.dto.usuario.UsuarioResponse;
 import br.com.avia.avia_api.entity.TokenRecuperacaoSenha;
 import br.com.avia.avia_api.entity.Usuario;
+import br.com.avia.avia_api.exception.auth.EmailDuplicadoException;
+import br.com.avia.avia_api.exception.auth.UsuarioNaoEncontradoException;
 import br.com.avia.avia_api.repository.TokenRecuperacaoSenhaRepository;
 import br.com.avia.avia_api.repository.UsuarioRepository;
 import br.com.avia.avia_api.security.TokenService;
-import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -45,7 +45,7 @@ public class AuthService {
 
     public UsuarioResponse cadastrar(CadastroRequestDTO request) {
         if (usuarioRepository.existsByEmail(request.email())) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "E-mail já cadastrado.");
+            throw new EmailDuplicadoException();
         }
 
         String senhaCriptografada = passwordEncoder.encode(request.senha());
@@ -74,7 +74,7 @@ public class AuthService {
         authenticationManager.authenticate(authenticationToken);
 
         Usuario usuario = usuarioRepository.findByEmail(request.email())
-                .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
+                .orElseThrow(UsuarioNaoEncontradoException::new);
 
         String token = tokenService.gerarToken(usuario);
 

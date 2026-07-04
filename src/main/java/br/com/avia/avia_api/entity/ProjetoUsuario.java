@@ -39,7 +39,7 @@ public class ProjetoUsuario {
     @JoinColumn(name = "papel_id")
     private Papel papel;
 
-    @ManyToMany(fetch = FetchType.LAZY)
+    @ManyToMany(fetch = FetchType.LAZY, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     @JoinTable(
             name = "projeto_usuario_permissao",
             joinColumns = @JoinColumn(name = "projeto_usuario_id"),

@@ -181,7 +181,10 @@ public class TarefaService {
     }
 
     @Transactional
-    public TarefaResponseDTO atualizarStatus(Long projetoId, Long tarefaId, AtualizarStatusTarefaRequestDTO dto) {
+    public TarefaResponseDTO atualizarStatus(Long projetoId, Long tarefaId, AtualizarStatusTarefaRequestDTO dto,
+                                             String emailMembro) {
+        Usuario membro = buscarUsuarioPorEmail(emailMembro);
+        verificarPermissao(projetoId, membro.getId(), "MOVERTAREFAS");
         Tarefa tarefa = buscarTarefaDoProjeto(projetoId, tarefaId);
         tarefa.setStatus(dto.status());
         return converterParaDTO(tarefaRepository.save(tarefa));

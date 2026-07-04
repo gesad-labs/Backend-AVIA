@@ -78,8 +78,8 @@ public class TarefasController {
             @RequestBody @Valid AtualizarStatusTarefaRequestDTO dto,
             @AuthenticationPrincipal Jwt jwt
     ) {
-        TarefaResponseDTO tarefa =
-                tarefaService.atualizarStatus(projetoId, tarefaId, dto);
+        String email = jwt.getSubject();
+        TarefaResponseDTO tarefa = tarefaService.atualizarStatus(projetoId, tarefaId, dto, email);
         return ResponseEntity.ok(tarefa);
     }
 

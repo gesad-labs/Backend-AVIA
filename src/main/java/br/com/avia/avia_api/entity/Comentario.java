@@ -29,11 +29,15 @@ public class Comentario {
     @Column(name = "criado_em", updatable = false)
     @Getter private LocalDateTime criadoEm;
 
+    @Column(name = "impedimento")
+    @Getter @Setter private boolean impedimento;
+
     public Comentario() {}
 
     public Comentario(Long tarefaId, String descricao, Long projetoUsuarioId) {
         this.tarefaId = tarefaId;
         this.descricao = descricao;
         this.projetoUsuarioId = projetoUsuarioId;
+        this.impedimento = false;
     }
 }

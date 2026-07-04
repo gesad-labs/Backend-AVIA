@@ -110,8 +110,9 @@ public class SprintService {
     }
 
     private void verificarPermissao(Long projetoId, Long usuarioId, String permissaoLabel){
-        Papel membroPapel = projetoUsuarioRepository.findPapelByProjetoIdAndUsuarioId(projetoId, usuarioId);
-        Set<Permissao> membroPermissoes = membroPapel.getPermissoes();
+        ProjetoUsuario membro = projetoUsuarioRepository.findByUsuarioIdAndProjetoId(usuarioId, projetoId)
+                .orElseThrow(() -> new RuntimeException("Usuário não é membro do projeto."));
+        List<Permissao> membroPermissoes = membro.getPermissoes();
 
         boolean possuiPermissao = membroPermissoes.stream()
                 .anyMatch(p -> p.getDescricao().equals(permissaoLabel));

@@ -8,5 +8,6 @@ import java.util.List;
 
 @Repository
 public interface ComentarioRepository extends JpaRepository<Comentario, Long> {
+    List<Comentario> findByTarefaIdOrderByIdAsc(Long tarefaId);
     List<Comentario> findByTarefaIdOrderByCriadoEmAsc(Long tarefaId);
 }

@@ -1,6 +1,10 @@
 package br.com.avia.avia_api.controller;
 
+import br.com.avia.avia_api.dto.permissao.PermissoesMembroRequestDTO;
+import br.com.avia.avia_api.dto.permissao.PermissoesMembroResponseDTO;
 import br.com.avia.avia_api.dto.projeto.*;
+import br.com.avia.avia_api.entity.Permissao;
+import br.com.avia.avia_api.enums.PermissoesUsuarioProjeto;
 import br.com.avia.avia_api.service.ProjetoService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -72,8 +76,8 @@ public class ProjetoController {
         return ResponseEntity.ok(membros);
     }
 
-        @PostMapping("/{id}/membros")
-        public ResponseEntity<Map<String, String>> adicionarNovoMembro(@PathVariable Long id,
+    @PostMapping("/{id}/membros")
+    public ResponseEntity<Map<String, String>> adicionarNovoMembro(@PathVariable Long id,
                                                                    @RequestBody @Valid AdicionarMembroProjetoRequestDTO dto,
                                                                    @AuthenticationPrincipal Jwt jwt) {
         String emailGerente = jwt.getSubject();
@@ -99,6 +103,36 @@ public class ProjetoController {
         String emailGerente = jwt.getSubject();
         String nomeMembro = projetoService.removerMembroDoProjeto(id, dto, emailGerente);
         Map<String, String> resposta = Map.of("mensagem", nomeMembro + " foi removido(a)");
-        return new ResponseEntity<>(resposta, HttpStatus.CREATED);
+        return new ResponseEntity<>(resposta, HttpStatus.OK);
+    }
+
+    @GetMapping("/{projeto_id}/membros/{usuario_id}/permissoes")
+    public ResponseEntity<PermissoesMembroResponseDTO> visualizarPermissoes(@PathVariable("projeto_id") Long projetoId,
+                                                                                  @PathVariable("usuario_id") Long usuarioId,
+                                                                                  @AuthenticationPrincipal Jwt jwt){
+        String emailMembro = jwt.getSubject();
+        List<PermissoesUsuarioProjeto> permissoesMembro = projetoService.visualizarPermissoesMembro(projetoId,
+                usuarioId, emailMembro);
+
+        return ResponseEntity.ok(new PermissoesMembroResponseDTO(permissoesMembro));
+    }
+
+    @PatchMapping("/{projeto_id}/membros/{usuario_id}/permissoes")
+    public void editarPermissoes(@PathVariable("projeto_id") Long projetoId,
+                                 @PathVariable("usuario_id") Long usuarioId,
+                                 @RequestBody @Valid PermissoesMembroRequestDTO dto,
+                                 @AuthenticationPrincipal Jwt jwt){
+        String email = jwt.getSubject();
+
+        projetoService.editarPermissoesMembro(projetoId, usuarioId, dto, email);
+    }
+
+    @PutMapping("/{projeto_id}/membros/{usuario_id}/permissoes")
+    public void restaurarPermissoes(@PathVariable("projeto_id") Long projetoId,
+                                    @PathVariable("usuario_id") Long usuarioId,
+                                    @AuthenticationPrincipal Jwt jwt){
+        String email = jwt.getSubject();
+
+        projetoService.restaurarPermissoesPadrao(projetoId, usuarioId, email);
     }
 }
