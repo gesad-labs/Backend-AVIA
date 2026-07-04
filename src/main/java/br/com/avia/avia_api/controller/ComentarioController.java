@@ -1,7 +1,8 @@
 package br.com.avia.avia_api.controller;
 
-import br.com.avia.avia_api.dto.comentario.CriarComentarioRequestDTO;
 import br.com.avia.avia_api.dto.comentario.ComentarioResponseDTO;
+import br.com.avia.avia_api.dto.comentario.CriarComentarioRequestDTO;
+import br.com.avia.avia_api.dto.comentario.EditarComentarioRequestDTO;
 import br.com.avia.avia_api.service.ComentarioService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -10,7 +11,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
-import br.com.avia.avia_api.dto.comentario.EditarComentarioRequestDTO;
 
 import java.util.List;
 

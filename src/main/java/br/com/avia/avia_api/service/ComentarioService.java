@@ -1,7 +1,7 @@
 package br.com.avia.avia_api.service;
 
-import br.com.avia.avia_api.dto.comentario.CriarComentarioRequestDTO;
 import br.com.avia.avia_api.dto.comentario.ComentarioResponseDTO;
+import br.com.avia.avia_api.dto.comentario.CriarComentarioRequestDTO;
 import br.com.avia.avia_api.entity.Comentario;
 import br.com.avia.avia_api.entity.Usuario;
 import br.com.avia.avia_api.repository.ComentarioRepository;
@@ -34,9 +34,8 @@ public class ComentarioService {
                 .orElseThrow(() -> new RuntimeException("Tarefa não encontrada"));
         Usuario usuario = usuarioRepository.findByEmail(emailUsuario)
                 .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
-        Comentario comentario = new Comentario(tarefaId, dto.descricao(), usuario.getId().intValue());
-        Comentario salvo = comentarioRepository.save(comentario);
-        return converterParaDTO(salvo);
+        Comentario comentario = new Comentario(tarefaId, dto.descricao(), usuario.getId());
+        return converterParaDTO(comentarioRepository.save(comentario));
     }
 
     public List<ComentarioResponseDTO> listarComentarios(Long tarefaId) {
@@ -83,7 +82,8 @@ public class ComentarioService {
                 comentario.getTarefaId(),
                 comentario.getDescricao(),
                 comentario.getProjetoUsuarioId(),
-                comentario.isImpedimento()
+                comentario.isImpedimento(),
+                comentario.getCriadoEm()
         );
     }
 }

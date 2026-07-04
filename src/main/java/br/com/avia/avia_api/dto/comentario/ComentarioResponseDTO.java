@@ -1,10 +1,12 @@
 package br.com.avia.avia_api.dto.comentario;
 
+import java.time.LocalDateTime;
+
 public record ComentarioResponseDTO(
-        long id,
-        long tarefaId,
+        Long id,
+        Long tarefaId,
         String descricao,
-        int projetoUsuarioId,
-        boolean impedimento
-) {
-}
+        Long projetoUsuarioId,
+        boolean impedimento,
+        LocalDateTime criadoEm
+) {}

@@ -23,6 +23,8 @@ public interface ProjetoUsuarioRepository extends JpaRepository<ProjetoUsuario, 
 
     Optional<ProjetoUsuario> findByProjetoIdAndUsuarioId(Long projetoId, Long usuarioId);
 
+    Optional<ProjetoUsuario> findByUsuarioIdAndProjetoId(Long usuarioId, Long projetoId);
+
     @Query("SELECT pu.papel FROM ProjetoUsuario pu WHERE pu.projeto.id = :projetoId AND pu.usuario.id = :usuarioId")
     Papel findPapelByProjetoIdAndUsuarioId(@Param("projetoId") Long projetoId,
                                            @Param("usuarioId") Long usuarioId);

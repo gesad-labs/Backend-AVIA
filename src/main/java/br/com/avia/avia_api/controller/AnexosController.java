@@ -11,6 +11,8 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/projetos/{projetoId}/tarefas/{tarefaId}/anexos")
 @Tag(name = "Anexos", description = "Gerenciamento de anexos de tarefas")
@@ -20,6 +22,15 @@ public class AnexosController {
 
     public AnexosController(AnexoService anexoService) {
         this.anexoService = anexoService;
+    }
+
+    @GetMapping
+    public ResponseEntity<List<AnexoResponseDTO>> listarAnexos(
+            @PathVariable Long projetoId,
+            @PathVariable Long tarefaId,
+            @AuthenticationPrincipal Jwt jwt
+    ) {
+        return ResponseEntity.ok(anexoService.listarAnexos(projetoId, tarefaId));
     }
 
     @PostMapping

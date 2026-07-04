@@ -83,6 +83,17 @@ public class PlanningPokerService {
     }
 
     @Transactional(readOnly = true)
+    public List<Long> listarTarefasComSessaoAtiva(Long projetoId, String emailUsuario) {
+        Usuario usuario = buscarUsuarioPorEmail(emailUsuario);
+        validarMembro(projetoId, usuario);
+        return sessaoRepository.findByProjetoIdAndStatusIn(projetoId, STATUS_ATIVOS)
+                .stream()
+                .map(PlanningPokerSessao::getTarefaId)
+                .distinct()
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
     public Optional<PlanningPokerSessaoResponseDTO> buscarSessaoAtiva(
             Long projetoId,
             Long tarefaId,

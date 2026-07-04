@@ -106,7 +106,7 @@ public class ProjetoService {
 
     @Transactional
     public MembroResponseDTO atualizarMembroDoProjeto(Long projetoId, Long usuarioAlvoId,
-                                                       AtualizarMembroRequestDTO dto, String emailSolicitante) {
+            AtualizarMembroRequestDTO dto, String emailSolicitante) {
         Usuario solicitante = buscarUsuarioPorEmail(emailSolicitante);
         verificarPermissao(projetoId, solicitante.getId(), "ADICIONARMEMBROS");
 
@@ -146,7 +146,7 @@ public class ProjetoService {
 
     @Transactional
     public ProjetoResponseDTO editarInformacoesDoProjeto(Long projetoId, AtualizarProjetoRequestDTO dto,
-                                                         String emailUsuario) {
+            String emailUsuario) {
         Usuario usuarioLogado = buscarUsuarioPorEmail(emailUsuario);
 
         validarPermissaoGerente(projetoId, usuarioLogado.getId());
@@ -200,12 +200,10 @@ public class ProjetoService {
 
     @Transactional
     public String removerMembroDoProjeto(Long projetoId, RemoverMembroRequestDTO dto, String emailMembro) {
-        //Membro que solicita a operação de exclusão
         Usuario membroSolicitante = buscarUsuarioPorEmail(emailMembro);
 
         verificarPermissao(projetoId, membroSolicitante.getId(), "REMOVERMEMBROS");
 
-        //Membro a ser removido
         Usuario membro = buscarUsuarioPorEmail(dto.emailMembro());
 
         projetoRepository.findById(projetoId)
@@ -226,7 +224,7 @@ public class ProjetoService {
 
     @Transactional
     public void editarPermissoesMembro(Long projetoId, Long usuarioId, PermissoesMembroRequestDTO dto,
-                                      String emailGerente){
+            String emailGerente) {
         Usuario gerente = buscarUsuarioPorEmail(emailGerente);
         validarPermissaoGerente(projetoId, gerente.getId());
 
@@ -235,7 +233,7 @@ public class ProjetoService {
 
         List<Permissao> novasPermissoes = new ArrayList<>();
 
-        for(PermissoesUsuarioProjeto permissaoEnum : dto.permissoes()){
+        for (PermissoesUsuarioProjeto permissaoEnum : dto.permissoes()) {
             String descricao = permissaoEnum.name();
             Permissao novaPermissao = permissaoRepository.findByDescricao(descricao);
             if (novaPermissao != null)
@@ -247,7 +245,8 @@ public class ProjetoService {
         projetoUsuarioRepository.save(pu);
     }
 
-    public List<PermissoesUsuarioProjeto> visualizarPermissoesMembro(Long projetoId, Long usuarioId, String emailMembro){
+    public List<PermissoesUsuarioProjeto> visualizarPermissoesMembro(Long projetoId, Long usuarioId,
+            String emailMembro) {
         buscarUsuarioPorEmail(emailMembro);
 
         ProjetoUsuario pu = projetoUsuarioRepository.findByUsuarioIdAndProjetoId(usuarioId, projetoId)
@@ -261,7 +260,7 @@ public class ProjetoService {
     }
 
     @Transactional
-    public void restaurarPermissoesPadrao(Long projetoId, Long usuarioId, String emailGerente){
+    public void restaurarPermissoesPadrao(Long projetoId, Long usuarioId, String emailGerente) {
         Usuario gerente = buscarUsuarioPorEmail(emailGerente);
         validarPermissaoGerente(projetoId, gerente.getId());
 
@@ -280,7 +279,7 @@ public class ProjetoService {
         Papel papelMembro = projetoUsuarioRepository.findPapelByProjetoIdAndUsuarioId(projetoId, usuarioId);
         boolean ehGerente = papelMembro.getNome().equalsIgnoreCase("GERENTE");
 
-        if(!ehGerente)
+        if (!ehGerente)
             throw new RuntimeException("Somente o gerente pode fazer isso.");
     }
 
@@ -293,33 +292,37 @@ public class ProjetoService {
         return new ProjetoResponseDTO(
                 projeto.getId(),
                 projeto.getNome(),
-                projeto.getTipoEstimativa()
-        );
+                projeto.getTipoEstimativa());
     }
 
     private MembroResponseDTO converterMembroParaDTO(ProjetoUsuario pu) {
         PapelProjeto papelEnum = null;
         if (pu.getPapel() != null) {
-            try { papelEnum = PapelProjeto.deString(pu.getPapel().getNome()); } catch (Exception ignored) {}
+            try {
+                papelEnum = PapelProjeto.deString(pu.getPapel().getNome());
+            } catch (Exception ignored) {
+            }
         }
         return new MembroResponseDTO(
                 pu.getUsuario().getId(),
                 pu.getUsuario().getNome(),
                 pu.getUsuario().getEmail(),
                 pu.getCargo(),
-                papelEnum
-        );
+                papelEnum);
     }
 
-    private void verificarPermissao(Long projetoId, Long usuarioId, String permissaoLabel){
+    private void verificarPermissao(Long projetoId, Long usuarioId, String permissaoLabel) {
         ProjetoUsuario membro = projetoUsuarioRepository.findByUsuarioIdAndProjetoId(usuarioId, projetoId)
                 .orElseThrow(() -> new RuntimeException("Usuário não é membro do projeto."));
-        List<Permissao> membroPermissoes = membro.getPermissoes();
 
-        boolean possuiPermissao = membroPermissoes.stream()
+        List<Permissao> permissoes = membro.getPermissoes().isEmpty()
+                ? new ArrayList<>(membro.getPapel().getPermissoes())
+                : membro.getPermissoes();
+
+        boolean possuiPermissao = permissoes.stream()
                 .anyMatch(p -> p.getDescricao().equals(permissaoLabel));
 
-        if(!possuiPermissao)
+        if (!possuiPermissao)
             throw new PermissaoNegadaException();
     }
 
