@@ -36,5 +36,8 @@ public interface ProjetoUsuarioRepository extends JpaRepository<ProjetoUsuario, 
     @Query("SELECT pu FROM ProjetoUsuario pu WHERE pu.usuario.id = :usuarioId AND pu.projeto.id = :projetoId")
     Optional<ProjetoUsuario> findByUsuarioIdAndProjetoId(@Param("usuarioId") Long usuarioId, @Param("projetoId") Long projetoId);
 
+    @Query("SELECT pu FROM ProjetoUsuario pu WHERE pu.projeto.id = :projetoId AND LOWER(pu.usuario.email) = LOWER(:email)")
+    Optional<ProjetoUsuario> findByProjetoIdAndUsuarioEmail(@Param("projetoId") Long projetoId, @Param("email") String email);
+
     boolean existsByProjetoIdAndUsuarioId(Long projetoId, Long usuarioId);
 }

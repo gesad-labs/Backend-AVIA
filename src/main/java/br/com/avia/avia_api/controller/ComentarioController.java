@@ -33,7 +33,7 @@ public class ComentarioController {
             @AuthenticationPrincipal Jwt jwt
     ) {
         String emailUsuario = jwt.getSubject();
-        ComentarioResponseDTO comentario = comentarioService.criarComentario(tarefaId, dto, emailUsuario);
+        ComentarioResponseDTO comentario = comentarioService.criarComentario(projetoId, tarefaId, dto, emailUsuario);
         return new ResponseEntity<>(comentario, HttpStatus.CREATED);
     }
 
