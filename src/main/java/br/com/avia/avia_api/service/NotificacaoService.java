@@ -1,14 +1,18 @@
 package br.com.avia.avia_api.service;
 
 import br.com.avia.avia_api.dto.notificacao.NotificacaoResponseDTO;
+import br.com.avia.avia_api.entity.Comentario;
 import br.com.avia.avia_api.entity.Notificacao;
 import br.com.avia.avia_api.entity.NotificacaoProjetoUsuario;
 import br.com.avia.avia_api.entity.ProjetoUsuario;
 import br.com.avia.avia_api.enums.TipoNotificacao;
 import br.com.avia.avia_api.repository.NotificacaoProjetoUsuarioRepository;
 import br.com.avia.avia_api.repository.NotificacaoRepository;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.util.List;
 
@@ -17,13 +21,16 @@ public class NotificacaoService {
 
     private final NotificacaoRepository notificacaoRepository;
     private final NotificacaoProjetoUsuarioRepository notificacaoProjetoUsuarioRepository;
+    private final SimpMessagingTemplate messagingTemplate;
 
     public NotificacaoService(
             NotificacaoRepository notificacaoRepository,
-            NotificacaoProjetoUsuarioRepository notificacaoProjetoUsuarioRepository
+            NotificacaoProjetoUsuarioRepository notificacaoProjetoUsuarioRepository,
+            SimpMessagingTemplate messagingTemplate
     ) {
         this.notificacaoRepository = notificacaoRepository;
         this.notificacaoProjetoUsuarioRepository = notificacaoProjetoUsuarioRepository;
+        this.messagingTemplate = messagingTemplate;
     }
 
     public void notificarUsuarioAdicionadoAoProjeto(ProjetoUsuario projetoUsuario) {
@@ -32,12 +39,46 @@ public class NotificacaoService {
 
         notificacaoRepository.save(notificacao);
 
+        criarNotificacaoProjetoUsuario(projetoUsuario, notificacao);
+    }
+
+    public void notificarUsuarioMencionadoEmComentario(ProjetoUsuario projetoUsuario, Comentario comentario) {
+        Notificacao notificacao = new Notificacao();
+        notificacao.setTipo(TipoNotificacao.MENCIONADO_COMENTARIO);
+        notificacao.setComentario(comentario);
+
+        notificacaoRepository.save(notificacao);
+
+        criarNotificacaoProjetoUsuario(projetoUsuario, notificacao);
+    }
+
+    private void criarNotificacaoProjetoUsuario(ProjetoUsuario projetoUsuario, Notificacao notificacao) {
         NotificacaoProjetoUsuario notificacaoProjetoUsuario = new NotificacaoProjetoUsuario();
         notificacaoProjetoUsuario.setProjetoUsuario(projetoUsuario);
         notificacaoProjetoUsuario.setNotificacao(notificacao);
         notificacaoProjetoUsuario.setLida(false);
 
-        notificacaoProjetoUsuarioRepository.save(notificacaoProjetoUsuario);
+        NotificacaoProjetoUsuario salva = notificacaoProjetoUsuarioRepository.save(notificacaoProjetoUsuario);
+        enviarNotificacaoEmTempoReal(projetoUsuario, toResponseDTO(salva));
+    }
+
+    private void enviarNotificacaoEmTempoReal(ProjetoUsuario projetoUsuario, NotificacaoResponseDTO notificacao) {
+        String emailUsuario = projetoUsuario.getUsuario().getEmail();
+        String destino = "/queue/projetos/" + projetoUsuario.getProjeto().getId() + "/notificacoes";
+
+        Runnable envio = () -> messagingTemplate.convertAndSendToUser(emailUsuario, destino, notificacao);
+
+        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    envio.run();
+                }
+            });
+            return;
+        }
+
+        envio.run();
     }
 
     @Transactional(readOnly = true)

@@ -3,14 +3,19 @@ package br.com.avia.avia_api.service;
 import br.com.avia.avia_api.dto.comentario.ComentarioResponseDTO;
 import br.com.avia.avia_api.dto.comentario.CriarComentarioRequestDTO;
 import br.com.avia.avia_api.entity.Comentario;
-import br.com.avia.avia_api.entity.Usuario;
+import br.com.avia.avia_api.entity.ProjetoUsuario;
+import br.com.avia.avia_api.entity.Tarefa;
 import br.com.avia.avia_api.repository.ComentarioRepository;
+import br.com.avia.avia_api.repository.ProjetoUsuarioRepository;
 import br.com.avia.avia_api.repository.TarefaRepository;
-import br.com.avia.avia_api.repository.UsuarioRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
+import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -18,24 +23,36 @@ public class ComentarioService {
 
     private final ComentarioRepository comentarioRepository;
     private final TarefaRepository tarefaRepository;
-    private final UsuarioRepository usuarioRepository;
+    private final ProjetoUsuarioRepository projetoUsuarioRepository;
+    private final NotificacaoService notificacaoService;
 
     public ComentarioService(ComentarioRepository comentarioRepository,
                              TarefaRepository tarefaRepository,
-                             UsuarioRepository usuarioRepository) {
+                             ProjetoUsuarioRepository projetoUsuarioRepository,
+                             NotificacaoService notificacaoService) {
         this.comentarioRepository = comentarioRepository;
         this.tarefaRepository = tarefaRepository;
-        this.usuarioRepository = usuarioRepository;
+        this.projetoUsuarioRepository = projetoUsuarioRepository;
+        this.notificacaoService = notificacaoService;
     }
 
     @Transactional
-    public ComentarioResponseDTO criarComentario(Long tarefaId, CriarComentarioRequestDTO dto, String emailUsuario) {
-        tarefaRepository.findById(tarefaId)
+    public ComentarioResponseDTO criarComentario(Long projetoId, Long tarefaId, CriarComentarioRequestDTO dto, String emailUsuario) {
+        Tarefa tarefa = tarefaRepository.findById(tarefaId)
                 .orElseThrow(() -> new RuntimeException("Tarefa não encontrada"));
-        Usuario usuario = usuarioRepository.findByEmail(emailUsuario)
-                .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
-        Comentario comentario = new Comentario(tarefaId, dto.descricao(), usuario.getId());
-        return converterParaDTO(comentarioRepository.save(comentario));
+
+        if (!Objects.equals(tarefa.getProjetoId(), projetoId)) {
+            throw new RuntimeException("Tarefa não pertence a esse projeto");
+        }
+
+        ProjetoUsuario autor = projetoUsuarioRepository.findByProjetoIdAndUsuarioEmail(projetoId, emailUsuario)
+                .orElseThrow(() -> new RuntimeException("Usuário não é membro do projeto."));
+
+        Comentario comentario = new Comentario(tarefaId, dto.descricao(), autor.getId());
+        Comentario salvo = comentarioRepository.save(comentario);
+        notificarUsuariosMencionados(projetoId, salvo, obterEmailsMencionados(dto));
+
+        return converterParaDTO(salvo);
     }
 
     public List<ComentarioResponseDTO> listarComentarios(Long tarefaId) {
@@ -85,5 +102,29 @@ public class ComentarioService {
                 comentario.isImpedimento(),
                 comentario.getCriadoEm()
         );
+    }
+
+    private Set<String> obterEmailsMencionados(CriarComentarioRequestDTO dto) {
+        Set<String> emails = new LinkedHashSet<>();
+
+        if (dto.emailsMencionados() != null) {
+            dto.emailsMencionados().forEach(email -> adicionarEmailNormalizado(emails, email));
+        }
+
+        return emails;
+    }
+
+    private void notificarUsuariosMencionados(Long projetoId, Comentario comentario, Set<String> emailsMencionados) {
+        emailsMencionados.forEach(email ->
+                projetoUsuarioRepository.findByProjetoIdAndUsuarioEmail(projetoId, email)
+                        .ifPresent(projetoUsuario ->
+                                notificacaoService.notificarUsuarioMencionadoEmComentario(projetoUsuario, comentario))
+        );
+    }
+
+    private void adicionarEmailNormalizado(Set<String> emails, String email) {
+        if (email != null && !email.isBlank()) {
+            emails.add(email.trim().toLowerCase(Locale.ROOT));
+        }
     }
 }
