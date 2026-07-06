@@ -10,6 +10,7 @@ public record NotificacaoResponseDTO(
         String mensagem,
         String nomeProjeto,
         Boolean lida,
-        LocalDateTime criadoEm
+        LocalDateTime criadoEm,
+        Long tarefaId
 ) {
 }

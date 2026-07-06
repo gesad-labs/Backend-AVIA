@@ -128,13 +128,21 @@ public class NotificacaoService {
 
         String mensagem = gerarMensagem(notificacaoProjetoUsuario);
 
+        Long tarefaId = null;
+        if (notificacao.getComentario() != null) {
+            tarefaId = notificacao.getComentario().getTarefaId();
+        } else if (notificacao.getTarefa() != null) {
+            tarefaId = notificacao.getTarefa().getId();
+        }
+
         return new NotificacaoResponseDTO(
                 notificacaoProjetoUsuario.getId(),
                 notificacao.getTipo(),
                 mensagem,
                 nomeProjeto,
                 notificacaoProjetoUsuario.getLida(),
-                notificacao.getCriadoEm()
+                notificacao.getCriadoEm(),
+                tarefaId
         );
     }
 

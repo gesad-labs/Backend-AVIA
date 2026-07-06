@@ -94,11 +94,22 @@ public class ComentarioService {
     }
 
     private ComentarioResponseDTO converterParaDTO(Comentario comentario) {
+        String autorNome  = null;
+        String autorEmail = null;
+        if (comentario.getProjetoUsuarioId() != null) {
+            var pu = projetoUsuarioRepository.findById(comentario.getProjetoUsuarioId()).orElse(null);
+            if (pu != null && pu.getUsuario() != null) {
+                autorNome  = pu.getUsuario().getNome();
+                autorEmail = pu.getUsuario().getEmail();
+            }
+        }
         return new ComentarioResponseDTO(
                 comentario.getId(),
                 comentario.getTarefaId(),
                 comentario.getDescricao(),
                 comentario.getProjetoUsuarioId(),
+                autorNome,
+                autorEmail,
                 comentario.isImpedimento(),
                 comentario.getCriadoEm()
         );
