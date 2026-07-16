@@ -106,6 +106,14 @@ public class ProjetoController {
         return new ResponseEntity<>(resposta, HttpStatus.OK);
     }
 
+    @DeleteMapping("/{id}/sair")
+    public ResponseEntity<Map<String, String>> sairDoProjeto(@PathVariable Long id,
+                                                              @AuthenticationPrincipal Jwt jwt) {
+        String emailMembro = jwt.getSubject();
+        projetoService.sairDoProjeto(id, emailMembro);
+        return new ResponseEntity<>(Map.of("mensagem", "Você saiu do projeto."), HttpStatus.OK);
+    }
+
     @GetMapping("/{projeto_id}/membros/{usuario_id}/permissoes")
     public ResponseEntity<PermissoesMembroResponseDTO> visualizarPermissoes(@PathVariable("projeto_id") Long projetoId,
                                                                                   @PathVariable("usuario_id") Long usuarioId,

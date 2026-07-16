@@ -68,7 +68,7 @@ public class ProjetoService {
                 .anyMatch(p -> p.getId().equals(projetoId));
 
         if (!temAcesso) {
-            throw new RuntimeException("Projeto não encontrado ou você não tem permissão para visualizá-lo.");
+            throw new PermissaoNegadaException("Projeto não encontrado ou você não tem permissão para visualizá-lo.");
         }
 
         Projeto projeto = projetoRepository.findById(projetoId)
@@ -94,7 +94,7 @@ public class ProjetoService {
         boolean temAcesso = projetosDoUsuario.stream().anyMatch(p -> p.getId() == idProjeto);
 
         if (!temAcesso) {
-            throw new RuntimeException("Você não tem permissão para visualizar os membros deste projeto.");
+            throw new PermissaoNegadaException("Você não tem permissão para visualizar os membros deste projeto.");
         }
 
         List<ProjetoUsuario> membros = projetoUsuarioRepository.findMembrosByProjetoId(idProjeto);
@@ -202,6 +202,26 @@ public class ProjetoService {
     }
 
     @Transactional
+    public void sairDoProjeto(Long projetoId, String emailMembro) {
+        Usuario membro = buscarUsuarioPorEmail(emailMembro);
+
+        ProjetoUsuario pu = projetoUsuarioRepository.findByProjetoIdAndUsuarioId(projetoId, membro.getId())
+                .orElseThrow(() -> new RuntimeException("Você não está neste projeto."));
+
+        Papel papel = projetoUsuarioRepository.findPapelByProjetoIdAndUsuarioId(projetoId, membro.getId());
+        if (papel != null && papel.getNome().equalsIgnoreCase("GERENTE")) {
+            long gerentesCount = projetoUsuarioRepository.findMembrosByProjetoId(projetoId).stream()
+                    .filter(p -> p.getPapel() != null && p.getPapel().getNome().equalsIgnoreCase("GERENTE"))
+                    .count();
+            if (gerentesCount <= 1) {
+                throw new RuntimeException("Você é o único gerente. Transfira a gerência antes de sair.");
+            }
+        }
+
+        projetoUsuarioRepository.delete(pu);
+    }
+
+    @Transactional
     public String removerMembroDoProjeto(Long projetoId, RemoverMembroRequestDTO dto, String emailMembro) {
         Usuario membroSolicitante = buscarUsuarioPorEmail(emailMembro);
 
@@ -283,7 +303,7 @@ public class ProjetoService {
         boolean ehGerente = papelMembro.getNome().equalsIgnoreCase("GERENTE");
 
         if (!ehGerente)
-            throw new RuntimeException("Somente o gerente pode fazer isso.");
+            throw new PermissaoNegadaException("Somente o gerente pode fazer isso.");
     }
 
     private Usuario buscarUsuarioPorEmail(String email) {

@@ -1,6 +1,7 @@
 package br.com.avia.avia_api.dto.tarefa;
 
 import br.com.avia.avia_api.enums.PrioridadeTarefa;
+import br.com.avia.avia_api.enums.StatusTarefa;
 import java.util.List;
 
 public record EditarTarefaRequestDTO(
@@ -10,5 +11,7 @@ public record EditarTarefaRequestDTO(
         PrioridadeTarefa prioridade,
         List<Long> responsaveisIds,
         Long tarefaParenteId,
-        String tipo
+        String tipo,
+        StatusTarefa status,
+        Boolean impedimento
 ) {}

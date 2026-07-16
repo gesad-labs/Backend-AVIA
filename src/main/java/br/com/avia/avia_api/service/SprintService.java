@@ -6,9 +6,11 @@ import br.com.avia.avia_api.enums.StatusSprint;
 import br.com.avia.avia_api.exception.permissao.PermissaoNegadaException;
 import br.com.avia.avia_api.exception.sprint.SprintJaExisteException;
 import br.com.avia.avia_api.exception.sprint.SprintNaoEncontradaException;
+import br.com.avia.avia_api.enums.StatusTarefa;
 import br.com.avia.avia_api.repository.ProjetoRepository;
 import br.com.avia.avia_api.repository.ProjetoUsuarioRepository;
 import br.com.avia.avia_api.repository.SprintRepository;
+import br.com.avia.avia_api.repository.TarefaRepository;
 import br.com.avia.avia_api.repository.UsuarioRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
@@ -24,12 +26,16 @@ public class SprintService {
     private final SprintRepository sprintRepository;
     private final ProjetoRepository projetoRepository;
     private final UsuarioRepository usuarioRepository;
+    private final TarefaRepository tarefaRepository;
 
-    public SprintService(ProjetoUsuarioRepository projetoUsuarioRepository, SprintRepository sprintRepository, ProjetoRepository projetoRepository, UsuarioRepository usuarioRepository) {
+    public SprintService(ProjetoUsuarioRepository projetoUsuarioRepository, SprintRepository sprintRepository,
+                         ProjetoRepository projetoRepository, UsuarioRepository usuarioRepository,
+                         TarefaRepository tarefaRepository) {
         this.projetoUsuarioRepository = projetoUsuarioRepository;
         this.sprintRepository = sprintRepository;
         this.projetoRepository = projetoRepository;
         this.usuarioRepository = usuarioRepository;
+        this.tarefaRepository = tarefaRepository;
     }
 
     @Transactional
@@ -88,7 +94,17 @@ public class SprintService {
 
         if (dto.nome() != null) sprint.setNome(dto.nome());
 
-        if (dto.status() != null) sprint.setStatus(dto.status());
+        if (dto.status() != null) {
+            sprint.setStatus(dto.status());
+
+            if (dto.status() == StatusSprint.CONCLUIDA) {
+                List<Tarefa> tarefasDaSprint = tarefaRepository.findBySprintId(sprint.getId());
+                for (Tarefa t : tarefasDaSprint) {
+                    t.setSprintId(null);
+                }
+                tarefaRepository.saveAll(tarefasDaSprint);
+            }
+        }
 
         Sprint sprintAtualizada = sprintRepository.save(sprint);
 

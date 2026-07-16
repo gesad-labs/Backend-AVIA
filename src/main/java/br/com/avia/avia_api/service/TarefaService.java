@@ -156,6 +156,8 @@ public class TarefaService {
         }
 
         if (dto.tipo() != null) tarefa.setTipo(dto.tipo());
+        if (dto.status() != null) tarefa.setStatus(dto.status());
+        if (dto.impedimento() != null) tarefa.setImpedimento(dto.impedimento());
 
         return converterParaDTO(tarefaRepository.save(tarefa));
     }
