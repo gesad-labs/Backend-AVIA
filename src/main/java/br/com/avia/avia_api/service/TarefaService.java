@@ -2,11 +2,11 @@ package br.com.avia.avia_api.service;
 
 import br.com.avia.avia_api.dto.tarefa.*;
 import br.com.avia.avia_api.entity.*;
+import br.com.avia.avia_api.enums.StatusTarefa;
 import br.com.avia.avia_api.exception.permissao.PermissaoNegadaException;
 import br.com.avia.avia_api.exception.sprint.SprintNaoEncontradaException;
 import br.com.avia.avia_api.exception.sprint.SprintNaoPertenceAoProjetoException;
-import br.com.avia.avia_api.exception.tarefa.TarefaNaoEncontradaException;
-import br.com.avia.avia_api.exception.tarefa.TarefaNaoPertenceAoProjetoException;
+import br.com.avia.avia_api.exception.tarefa.*;
 import br.com.avia.avia_api.repository.*;
 import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
@@ -44,10 +44,15 @@ public class TarefaService {
     @Transactional
     public TarefaResponseDTO criarTarefa(Long projetoId, CriarTarefaRequestDTO dto, String emailMembro) {
         Usuario membro = buscarUsuarioPorEmail(emailMembro);
-        verificarPermissao(projetoId, membro.getId(), "CRIARTAREFAS");
 
         Long sprintId = dto.sprintId();
         Long tarefaParenteId = dto.tarefaParenteId();
+
+        if (tarefaParenteId != null) {
+            verificarPermissao(projetoId, membro.getId(), "CRIARSUBTAREFAS", "CRIARTAREFAS");
+        } else {
+            verificarPermissao(projetoId, membro.getId(), "CRIARTAREFAS");
+        }
 
         if (sprintId != null) {
             Sprint sprint = sprintRepository.findById(sprintId)
@@ -58,7 +63,8 @@ public class TarefaService {
         }
 
         if (tarefaParenteId != null) {
-            buscarTarefaDoProjeto(projetoId, tarefaParenteId);
+            Tarefa pai = buscarTarefaDoProjeto(projetoId, tarefaParenteId);
+            validarPai(pai, null, dto.status());
         }
 
         Tarefa tarefa = new Tarefa(
@@ -93,6 +99,9 @@ public class TarefaService {
         Usuario membro = buscarUsuarioPorEmail(emailMembro);
         verificarPermissao(projetoId, membro.getId(), "EXCLUIRTAREFAS");
         Tarefa tarefa = buscarTarefaDoProjeto(projetoId, tarefaId);
+        if (tarefaRepository.existsByTarefaParenteId(tarefaId)) {
+            throw new TarefaPossuiSubtarefasException();
+        }
         tarefaProjetoUsuarioRepository.deleteByTarefaId(tarefaId);
         tarefaRepository.delete(tarefa);
     }
@@ -111,6 +120,14 @@ public class TarefaService {
     public TarefaResponseDTO buscarTarefaPorId(Long projetoId, Long tarefaId) {
         Tarefa tarefa = buscarTarefaDoProjeto(projetoId, tarefaId);
         return converterParaDTO(tarefa);
+    }
+
+    @Transactional
+    public List<TarefaResponseDTO> listarSubtarefas(Long projetoId, Long tarefaId) {
+        buscarTarefaDoProjeto(projetoId, tarefaId);
+        return tarefaRepository.findByTarefaParenteId(tarefaId).stream()
+                .map(this::converterParaDTO)
+                .toList();
     }
 
     @Transactional
@@ -150,8 +167,9 @@ public class TarefaService {
             if (dto.tarefaParenteId() == -1L) {
                 tarefa.setTarefaParenteId(null);
             } else {
-                buscarTarefaDoProjeto(projetoId, dto.tarefaParenteId());
-                tarefa.setTarefaParenteId(dto.tarefaParenteId());
+                Tarefa pai = buscarTarefaDoProjeto(projetoId, dto.tarefaParenteId());
+                validarPai(pai, tarefaId, tarefa.getStatus());
+                tarefa.setTarefaParenteId(pai.getId());
             }
         }
 
@@ -186,6 +204,7 @@ public class TarefaService {
         Usuario membro = buscarUsuarioPorEmail(emailMembro);
         verificarPermissao(projetoId, membro.getId(), "MOVERTAREFAS");
         Tarefa tarefa = buscarTarefaDoProjeto(projetoId, tarefaId);
+        validarTransicaoStatus(tarefa, dto.status());
         tarefa.setStatus(dto.status());
         return converterParaDTO(tarefaRepository.save(tarefa));
     }
@@ -199,6 +218,7 @@ public class TarefaService {
                 .toList();
 
         int subtarefasCount = tarefaRepository.countByTarefaParenteId(tarefa.getId());
+        int subtarefasConcluidasCount = tarefaRepository.countByTarefaParenteIdAndStatus(tarefa.getId(), StatusTarefa.CONCLUIDA);
         int anexosCount = anexoRepository.countByTarefaId(tarefa.getId());
 
         return new TarefaResponseDTO(
@@ -214,8 +234,41 @@ public class TarefaService {
                 responsaveis,
                 tarefa.getTipo(),
                 subtarefasCount,
+                subtarefasConcluidasCount,
                 anexosCount
         );
+    }
+
+    private void validarPai(Tarefa pai, Long filhoId, StatusTarefa statusFilho) {
+        if (Objects.equals(pai.getId(), filhoId)) {
+            throw new HierarquiaTarefaInvalidaException("Uma tarefa não pode ser subtarefa de si mesma");
+        }
+        if (pai.getTarefaParenteId() != null) {
+            throw new HierarquiaTarefaInvalidaException("Não é possível criar subtarefa de uma subtarefa");
+        }
+        if (filhoId != null && tarefaRepository.existsByTarefaParenteId(filhoId)) {
+            throw new HierarquiaTarefaInvalidaException("Uma tarefa que possui subtarefas não pode se tornar subtarefa");
+        }
+        if (pai.getStatus() == StatusTarefa.CONCLUIDA && statusFilho != StatusTarefa.CONCLUIDA) {
+            throw new TarefaPaiConcluidaException();
+        }
+    }
+
+    private void validarTransicaoStatus(Tarefa tarefa, StatusTarefa novoStatus) {
+        boolean concluindo = novoStatus == StatusTarefa.CONCLUIDA;
+        if (concluindo && tarefaRepository.existsByTarefaParenteIdAndStatusNot(tarefa.getId(), StatusTarefa.CONCLUIDA)) {
+            throw new SubtarefasPendentesException();
+        }
+
+        boolean reabrindo = tarefa.getStatus() == StatusTarefa.CONCLUIDA && !concluindo;
+        if (reabrindo && tarefa.getTarefaParenteId() != null) {
+            boolean paiConcluido = tarefaRepository.findById(tarefa.getTarefaParenteId())
+                    .map(pai -> pai.getStatus() == StatusTarefa.CONCLUIDA)
+                    .orElse(false);
+            if (paiConcluido) {
+                throw new TarefaPaiConcluidaException();
+            }
+        }
     }
 
     private Tarefa buscarTarefaDoProjeto(Long projetoId, Long tarefaId) {
@@ -232,7 +285,7 @@ public class TarefaService {
                 .orElseThrow(() -> new RuntimeException("Usuário autenticado não encontrado."));
     }
 
-    private void verificarPermissao(Long projetoId, Long usuarioId, String permissaoLabel) {
+    private void verificarPermissao(Long projetoId, Long usuarioId, String... permissoesAceitas) {
         ProjetoUsuario membro = projetoUsuarioRepository.findByUsuarioIdAndProjetoId(usuarioId, projetoId)
                 .orElseThrow(() -> new RuntimeException("Usuário não é membro do projeto."));
 
@@ -240,8 +293,9 @@ public class TarefaService {
                 ? new ArrayList<>(membro.getPapel().getPermissoes())
                 : membro.getPermissoes();
 
+        List<String> aceitas = List.of(permissoesAceitas);
         boolean possuiPermissao = permissoes.stream()
-                .anyMatch(p -> p.getDescricao().equals(permissaoLabel));
+                .anyMatch(p -> aceitas.contains(p.getDescricao()));
 
         if (!possuiPermissao)
             throw new PermissaoNegadaException();
