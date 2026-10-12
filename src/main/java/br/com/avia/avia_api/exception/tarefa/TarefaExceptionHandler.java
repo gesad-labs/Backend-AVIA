@@ -22,4 +22,32 @@ public class TarefaExceptionHandler {
                 .status(HttpStatus.BAD_REQUEST)
                 .body(new ErroResponseDTO(ex.getMessage()));
     }
+
+    @ExceptionHandler(HierarquiaTarefaInvalidaException.class)
+    public ResponseEntity<ErroResponseDTO> handleHierarquiaTarefaInvalida(HierarquiaTarefaInvalidaException ex) {
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(new ErroResponseDTO(ex.getMessage()));
+    }
+
+    @ExceptionHandler(TarefaPaiConcluidaException.class)
+    public ResponseEntity<ErroResponseDTO> handleTarefaPaiConcluida(TarefaPaiConcluidaException ex) {
+        return ResponseEntity
+                .status(HttpStatus.CONFLICT)
+                .body(new ErroResponseDTO(ex.getMessage()));
+    }
+
+    @ExceptionHandler(SubtarefasPendentesException.class)
+    public ResponseEntity<ErroResponseDTO> handleSubtarefasPendentes(SubtarefasPendentesException ex) {
+        return ResponseEntity
+                .status(HttpStatus.CONFLICT)
+                .body(new ErroResponseDTO(ex.getMessage()));
+    }
+
+    @ExceptionHandler(TarefaPossuiSubtarefasException.class)
+    public ResponseEntity<ErroResponseDTO> handleTarefaPossuiSubtarefas(TarefaPossuiSubtarefasException ex) {
+        return ResponseEntity
+                .status(HttpStatus.CONFLICT)
+                .body(new ErroResponseDTO(ex.getMessage()));
+    }
 }

@@ -17,5 +17,6 @@ public record TarefaResponseDTO(
         List<ResponsavelDTO> responsaveis,
         String tipo,
         Integer subtarefasCount,
+        Integer subtarefasConcluidasCount,
         Integer anexosCount
 ) {}
