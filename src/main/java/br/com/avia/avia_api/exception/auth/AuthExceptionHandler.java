@@ -1,9 +1,9 @@
 package br.com.avia.avia_api.exception.auth;
 
 import br.com.avia.avia_api.exception.ErroResponseDTO;
-import br.com.avia.avia_api.exception.ErroValidacaoResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -15,11 +15,13 @@ import java.util.Map;
 
 @RestControllerAdvice
 public class AuthExceptionHandler {
-    @ExceptionHandler(UsuarioNaoEncontradoException.class)
-    public ResponseEntity<ErroResponseDTO> handleUsuarioNaoEncontrado(UsuarioNaoEncontradoException ex) {
+    // troquei o metodo para receber o exception lançado pelo authenticationManager
+    // que ja faz a verificação tanto de email como de senha, de forma mais segura
+    @ExceptionHandler(AuthenticationException.class)
+    public ResponseEntity<ErroResponseDTO> handleUsuarioNaoEncontrado(AuthenticationException ex) {
         return ResponseEntity
-                .status(HttpStatus.NOT_FOUND)
-                .body(new ErroResponseDTO(ex.getMessage()));
+                .status(HttpStatus.UNAUTHORIZED)
+                .body(new ErroResponseDTO("Credenciais inválidas"));
 
     }
     @ExceptionHandler(EmailDuplicadoException.class)
