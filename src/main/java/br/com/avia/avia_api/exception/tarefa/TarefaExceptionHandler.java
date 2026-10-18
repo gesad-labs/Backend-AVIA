@@ -50,4 +50,25 @@ public class TarefaExceptionHandler {
                 .status(HttpStatus.CONFLICT)
                 .body(new ErroResponseDTO(ex.getMessage()));
     }
+
+    @ExceptionHandler(DependenciaInvalidaException.class)
+    public ResponseEntity<ErroResponseDTO> handleDependenciaInvalida(DependenciaInvalidaException ex) {
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(new ErroResponseDTO(ex.getMessage()));
+    }
+
+    @ExceptionHandler(DependenciaCircularException.class)
+    public ResponseEntity<ErroResponseDTO> handleDependenciaCircular(DependenciaCircularException ex) {
+        return ResponseEntity
+                .status(HttpStatus.CONFLICT)
+                .body(new ErroResponseDTO(ex.getMessage()));
+    }
+
+    @ExceptionHandler(TarefaBloqueadaException.class)
+    public ResponseEntity<ErroResponseDTO> handleTarefaBloqueada(TarefaBloqueadaException ex) {
+        return ResponseEntity
+                .status(HttpStatus.CONFLICT)
+                .body(new ErroResponseDTO(ex.getMessage()));
+    }
 }

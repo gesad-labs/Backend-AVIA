@@ -27,4 +27,6 @@ public interface TarefaRepository extends JpaRepository<Tarefa, Long> {
     boolean existsByTarefaParenteId(Long tarefaParenteId);
 
     boolean existsByTarefaParenteIdAndStatusNot(Long tarefaParenteId, StatusTarefa status);
+
+    List<Tarefa> findByBloqueadaPorId(Long bloqueadaPorId);
 }

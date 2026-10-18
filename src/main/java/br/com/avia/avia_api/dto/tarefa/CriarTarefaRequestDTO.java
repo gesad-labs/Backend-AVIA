@@ -29,5 +29,7 @@ public record CriarTarefaRequestDTO(
 
         List<Long> responsaveisIds,
 
-        String tipo
+        String tipo,
+
+        Long bloqueadaPorId
 ) {}
