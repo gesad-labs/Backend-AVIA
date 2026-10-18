@@ -10,10 +10,7 @@ import br.com.avia.avia_api.entity.Tarefa;
 import br.com.avia.avia_api.entity.Usuario;
 import br.com.avia.avia_api.enums.StatusTarefa;
 import br.com.avia.avia_api.exception.permissao.PermissaoNegadaException;
-import br.com.avia.avia_api.exception.tarefa.HierarquiaTarefaInvalidaException;
-import br.com.avia.avia_api.exception.tarefa.SubtarefasPendentesException;
-import br.com.avia.avia_api.exception.tarefa.TarefaPaiConcluidaException;
-import br.com.avia.avia_api.exception.tarefa.TarefaPossuiSubtarefasException;
+import br.com.avia.avia_api.exception.tarefa.*;
 import br.com.avia.avia_api.repository.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -235,6 +232,182 @@ class TarefaServiceTest {
         assertThat(subtarefas).extracting(TarefaResponseDTO::id).containsExactly(101L, 102L);
     }
 
+    // ---- Dependências: marcar e remover ----
+
+    @Test
+    void marcaTarefaComoBloqueadaPorOutra() {
+        tarefa(200L, StatusTarefa.A_FAZER, null);
+        tarefa(201L, StatusTarefa.A_FAZER, null);
+
+        TarefaResponseDTO dto = tarefaService.editarTarefa(PROJETO_ID, 201L, bloqueioDTO(200L), EMAIL);
+
+        assertThat(dto.bloqueadaPorId()).isEqualTo(200L);
+        assertThat(dto.bloqueada()).isTrue();
+    }
+
+    @Test
+    void naoApareceBloqueadaQuandoPredecessoraConcluida() {
+        tarefa(200L, StatusTarefa.CONCLUIDA, null);
+        tarefa(201L, StatusTarefa.A_FAZER, null);
+
+        TarefaResponseDTO dto = tarefaService.editarTarefa(PROJETO_ID, 201L, bloqueioDTO(200L), EMAIL);
+
+        assertThat(dto.bloqueadaPorId()).isEqualTo(200L);
+        assertThat(dto.bloqueada()).isFalse();
+    }
+
+    @Test
+    void removeBloqueioComMenosUm() {
+        tarefa(200L, StatusTarefa.A_FAZER, null);
+        Tarefa bloqueada = bloqueadaPor(tarefa(201L, StatusTarefa.A_FAZER, null), 200L);
+
+        tarefaService.editarTarefa(PROJETO_ID, 201L, bloqueioDTO(-1L), EMAIL);
+
+        assertThat(bloqueada.getBloqueadaPorId()).isNull();
+    }
+
+    @Test
+    void subtarefaPodeSerBloqueadaPorIrma() {
+        tarefa(100L, StatusTarefa.A_FAZER, null);
+        tarefa(101L, StatusTarefa.A_FAZER, 100L);
+        Tarefa irma = tarefa(102L, StatusTarefa.A_FAZER, 100L);
+
+        tarefaService.editarTarefa(PROJETO_ID, 102L, bloqueioDTO(101L), EMAIL);
+
+        assertThat(irma.getBloqueadaPorId()).isEqualTo(101L);
+    }
+
+    // ---- Dependências: validações ----
+
+    @Test
+    void tarefaNaoPodeSerBloqueadaPorSiMesma() {
+        tarefa(200L, StatusTarefa.A_FAZER, null);
+
+        assertThatThrownBy(() -> tarefaService.editarTarefa(PROJETO_ID, 200L, bloqueioDTO(200L), EMAIL))
+                .isInstanceOf(DependenciaInvalidaException.class);
+    }
+
+    @Test
+    void subtarefaNaoPodeSerBloqueadaPeloPai() {
+        tarefa(100L, StatusTarefa.A_FAZER, null);
+        tarefa(101L, StatusTarefa.A_FAZER, 100L);
+
+        assertThatThrownBy(() -> tarefaService.editarTarefa(PROJETO_ID, 101L, bloqueioDTO(100L), EMAIL))
+                .isInstanceOf(DependenciaInvalidaException.class);
+    }
+
+    @Test
+    void paiNaoPodeSerBloqueadoPorSubtarefa() {
+        tarefa(100L, StatusTarefa.A_FAZER, null);
+        tarefa(101L, StatusTarefa.A_FAZER, 100L);
+
+        assertThatThrownBy(() -> tarefaService.editarTarefa(PROJETO_ID, 100L, bloqueioDTO(101L), EMAIL))
+                .isInstanceOf(DependenciaInvalidaException.class);
+    }
+
+    @Test
+    void naoViraSubtarefaDeQuemEstaBloqueando() {
+        bloqueadaPor(tarefa(100L, StatusTarefa.A_FAZER, null), 200L);
+        tarefa(200L, StatusTarefa.A_FAZER, null);
+
+        assertThatThrownBy(() -> tarefaService.editarTarefa(PROJETO_ID, 200L, editarDTO(100L), EMAIL))
+                .isInstanceOf(DependenciaInvalidaException.class);
+    }
+
+    @Test
+    void naoCriaCicloDireto() {
+        bloqueadaPor(tarefa(200L, StatusTarefa.A_FAZER, null), 201L);
+        tarefa(201L, StatusTarefa.A_FAZER, null);
+
+        assertThatThrownBy(() -> tarefaService.editarTarefa(PROJETO_ID, 201L, bloqueioDTO(200L), EMAIL))
+                .isInstanceOf(DependenciaCircularException.class);
+    }
+
+    @Test
+    void naoCriaCicloIndireto() {
+        // A bloqueada por B, B bloqueada por C; tentar C bloqueada por A
+        bloqueadaPor(tarefa(300L, StatusTarefa.A_FAZER, null), 301L);
+        bloqueadaPor(tarefa(301L, StatusTarefa.A_FAZER, null), 302L);
+        tarefa(302L, StatusTarefa.A_FAZER, null);
+
+        assertThatThrownBy(() -> tarefaService.editarTarefa(PROJETO_ID, 302L, bloqueioDTO(300L), EMAIL))
+                .isInstanceOf(DependenciaCircularException.class);
+    }
+
+    @Test
+    void naoCriaCicloPassandoPelaHierarquia() {
+        // S é subtarefa de P; X é bloqueada por P; tentar S bloqueada por X
+        tarefa(100L, StatusTarefa.A_FAZER, null);
+        Tarefa sub = tarefa(101L, StatusTarefa.A_FAZER, 100L);
+        bloqueadaPor(tarefa(400L, StatusTarefa.A_FAZER, null), 100L);
+        when(tarefaRepository.findByTarefaParenteId(100L)).thenReturn(List.of(sub));
+
+        assertThatThrownBy(() -> tarefaService.editarTarefa(PROJETO_ID, 101L, bloqueioDTO(400L), EMAIL))
+                .isInstanceOf(DependenciaCircularException.class);
+    }
+
+    @Test
+    void naoCriaTarefaJaEmFazendoComPredecessoraPendente() {
+        tarefa(200L, StatusTarefa.A_FAZER, null);
+
+        assertThatThrownBy(() -> tarefaService.criarTarefa(PROJETO_ID, criarDTO(null, StatusTarefa.FAZENDO, 200L), EMAIL))
+                .isInstanceOf(TarefaBloqueadaException.class);
+    }
+
+    @Test
+    void criaTarefaBloqueadaEmAFazer() {
+        tarefa(200L, StatusTarefa.A_FAZER, null);
+
+        TarefaResponseDTO dto = tarefaService.criarTarefa(PROJETO_ID, criarDTO(null, StatusTarefa.A_FAZER, 200L), EMAIL);
+
+        assertThat(dto.bloqueadaPorId()).isEqualTo(200L);
+        assertThat(dto.bloqueada()).isTrue();
+    }
+
+    // ---- Dependências: regra de status ----
+
+    @Test
+    void bloqueadaNaoVaiParaFazendo() {
+        tarefa(200L, StatusTarefa.FAZENDO, null);
+        bloqueadaPor(tarefa(201L, StatusTarefa.A_FAZER, null), 200L);
+
+        assertThatThrownBy(() -> tarefaService.atualizarStatus(PROJETO_ID, 201L, statusDTO(StatusTarefa.FAZENDO), EMAIL))
+                .isInstanceOf(TarefaBloqueadaException.class)
+                .hasMessageContaining("Tarefa 200");
+    }
+
+    @Test
+    void vaiParaFazendoQuandoPredecessoraConcluida() {
+        tarefa(200L, StatusTarefa.CONCLUIDA, null);
+        Tarefa bloqueada = bloqueadaPor(tarefa(201L, StatusTarefa.A_FAZER, null), 200L);
+
+        tarefaService.atualizarStatus(PROJETO_ID, 201L, statusDTO(StatusTarefa.FAZENDO), EMAIL);
+
+        assertThat(bloqueada.getStatus()).isEqualTo(StatusTarefa.FAZENDO);
+    }
+
+    @Test
+    void bloqueioSoImpedeFazendo() {
+        // Decisão da equipe: seguir o texto da US024, que só impede "Em Andamento"
+        tarefa(200L, StatusTarefa.A_FAZER, null);
+        Tarefa bloqueada = bloqueadaPor(tarefa(201L, StatusTarefa.A_FAZER, null), 200L);
+
+        tarefaService.atualizarStatus(PROJETO_ID, 201L, statusDTO(StatusTarefa.TESTE), EMAIL);
+
+        assertThat(bloqueada.getStatus()).isEqualTo(StatusTarefa.TESTE);
+    }
+
+    @Test
+    void excluirPredecessoraLiberaAsBloqueadas() {
+        tarefa(200L, StatusTarefa.A_FAZER, null);
+        Tarefa bloqueada = bloqueadaPor(tarefa(201L, StatusTarefa.A_FAZER, null), 200L);
+        when(tarefaRepository.findByBloqueadaPorId(200L)).thenReturn(List.of(bloqueada));
+
+        tarefaService.deletarTarefa(PROJETO_ID, 200L, EMAIL);
+
+        assertThat(bloqueada.getBloqueadaPorId()).isNull();
+    }
+
     // ---- Auxiliares ----
 
     private void comPermissoes(String... descricoes) {
@@ -251,12 +424,25 @@ class TarefaServiceTest {
         return tarefa;
     }
 
+    private Tarefa bloqueadaPor(Tarefa tarefa, Long bloqueadaPorId) {
+        tarefa.setBloqueadaPorId(bloqueadaPorId);
+        return tarefa;
+    }
+
     private CriarTarefaRequestDTO criarDTO(Long tarefaParenteId, StatusTarefa status) {
-        return new CriarTarefaRequestDTO("Nova", "desc", null, status, null, null, tarefaParenteId, false, null, null);
+        return criarDTO(tarefaParenteId, status, null);
+    }
+
+    private CriarTarefaRequestDTO criarDTO(Long tarefaParenteId, StatusTarefa status, Long bloqueadaPorId) {
+        return new CriarTarefaRequestDTO("Nova", "desc", null, status, null, null, tarefaParenteId, false, null, null, bloqueadaPorId);
     }
 
     private EditarTarefaRequestDTO editarDTO(Long tarefaParenteId) {
-        return new EditarTarefaRequestDTO(null, null, null, null, null, tarefaParenteId, null);
+        return new EditarTarefaRequestDTO(null, null, null, null, null, tarefaParenteId, null, null);
+    }
+
+    private EditarTarefaRequestDTO bloqueioDTO(Long bloqueadaPorId) {
+        return new EditarTarefaRequestDTO(null, null, null, null, null, null, null, bloqueadaPorId);
     }
 
     private AtualizarStatusTarefaRequestDTO statusDTO(StatusTarefa status) {

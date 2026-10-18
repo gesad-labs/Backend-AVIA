@@ -51,6 +51,9 @@ public class Tarefa {
     @Column(name = "tarefa_parente_id")
     private Long tarefaParenteId;
 
+    @Column(name = "bloqueada_por_id")
+    private Long bloqueadaPorId;
+
     @Column(name = "impedimento")
     private Boolean impedimento;
 
