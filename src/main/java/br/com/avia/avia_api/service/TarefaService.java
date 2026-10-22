@@ -139,9 +139,14 @@ public class TarefaService {
     }
 
     @Transactional
-    public List<TarefaResponseDTO> listarSubtarefas(Long projetoId, Long tarefaId) {
-        buscarTarefaDoProjeto(projetoId, tarefaId);
-        return tarefaRepository.findByTarefaParenteId(tarefaId).stream()
+    public List<TarefaResponseDTO> listarSubtarefas(Long projetoId, Long tarefaId, String emailMembro) {
+        Usuario membro = buscarUsuarioPorEmail(emailMembro);
+        verificarPermissao(projetoId, membro.getId(), "VISUALIZARPROJETO");
+
+        Tarefa pai = tarefaRepository.findByIdAndProjetoId(tarefaId, projetoId)
+                .orElseThrow(TarefaNaoEncontradaException::new);
+
+        return tarefaRepository.findByTarefaParenteId(pai.getId()).stream()
                 .map(this::converterParaDTO)
                 .toList();
     }
