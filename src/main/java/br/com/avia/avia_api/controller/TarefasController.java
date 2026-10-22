@@ -63,8 +63,9 @@ public class TarefasController {
             @PathVariable Long tarefaId,
             @AuthenticationPrincipal Jwt jwt
     ) {
+        String emailMembro = jwt.getSubject();
         List<TarefaResponseDTO> subtarefas =
-                tarefaService.listarSubtarefas(projetoId, tarefaId);
+                tarefaService.listarSubtarefas(projetoId, tarefaId, emailMembro);
         return ResponseEntity.ok(subtarefas);
     }
 

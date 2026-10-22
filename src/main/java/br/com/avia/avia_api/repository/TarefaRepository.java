@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface TarefaRepository extends JpaRepository<Tarefa, Long> {
@@ -17,6 +18,8 @@ public interface TarefaRepository extends JpaRepository<Tarefa, Long> {
     List<Tarefa> findByProjetoIdAndSprintIdIsNull(Long projetoId);
 
     List<Tarefa> findByProjetoId(Long projetoId);
+
+    Optional<Tarefa> findByIdAndProjetoId(Long id, Long projetoId);
 
     int countByTarefaParenteId(Long tarefaParenteId);
 
