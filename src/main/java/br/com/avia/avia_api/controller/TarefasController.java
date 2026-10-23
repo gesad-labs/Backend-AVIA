@@ -2,6 +2,7 @@
 package br.com.avia.avia_api.controller;
 
 import br.com.avia.avia_api.dto.tarefa.*;
+import br.com.avia.avia_api.enums.StatusTarefa;
 import br.com.avia.avia_api.service.TarefaService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -43,6 +44,24 @@ public class TarefasController {
     ) {
         List<TarefaResponseDTO> tarefas =
                 tarefaService.listarBacklog(projetoId, status, prioridade);
+        return ResponseEntity.ok(tarefas);
+    }
+
+    @GetMapping("/{projetoId}/tarefas/historico")
+    public ResponseEntity<List<TarefaResponseDTO>> filtrarHistorico(
+            @PathVariable Long projetoId,
+            @RequestParam(required = false) List<Long> responsaveisIds,
+            @RequestParam(required = false) Long sprintInicioId,
+            @RequestParam(required = false) Long sprintFimId,
+            @RequestParam(required = false) List<StatusTarefa> status,
+            @RequestParam(required = false) Boolean impedimento,
+            @AuthenticationPrincipal Jwt jwt
+    ) {
+        String emailMembro = jwt.getSubject();
+        FiltroHistoricoDTO filtro =
+                new FiltroHistoricoDTO(responsaveisIds, sprintInicioId, sprintFimId, status, impedimento);
+        List<TarefaResponseDTO> tarefas =
+                tarefaService.filtrarHistorico(projetoId, filtro, emailMembro);
         return ResponseEntity.ok(tarefas);
     }
 

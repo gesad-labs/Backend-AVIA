@@ -4,6 +4,7 @@ import br.com.avia.avia_api.dto.tarefa.*;
 import br.com.avia.avia_api.entity.*;
 import br.com.avia.avia_api.enums.StatusTarefa;
 import br.com.avia.avia_api.exception.permissao.PermissaoNegadaException;
+import br.com.avia.avia_api.exception.sprint.IntervaloSprintsInvalidoException;
 import br.com.avia.avia_api.exception.sprint.SprintNaoEncontradaException;
 import br.com.avia.avia_api.exception.sprint.SprintNaoPertenceAoProjetoException;
 import br.com.avia.avia_api.exception.tarefa.*;
@@ -160,6 +161,36 @@ public class TarefaService {
                         (t.getPrioridade() != null && t.getPrioridade().name().equalsIgnoreCase(prioridade)))
                 .filter(t -> sprintId == null || Objects.equals(t.getSprintId(), sprintId))
                 .map(this::converterParaDTO)
+                .toList();
+    }
+
+    // Filtros opcionais, combinados com E; nos de múltipla escolha basta casar com um dos valores.
+    // Como a Sprint não tem datas, o intervalo segue a ordem de criação (id) das sprints do projeto.
+    @Transactional
+    public List<TarefaResponseDTO> filtrarHistorico(Long projetoId, FiltroHistoricoDTO filtro, String emailMembro) {
+        Usuario membro = buscarUsuarioPorEmail(emailMembro);
+        verificarPermissao(projetoId, membro.getId(), "VISUALIZARPROJETO");
+
+        Long sprintInicioId = filtro.sprintInicioId();
+        Long sprintFimId = filtro.sprintFimId();
+        if (sprintInicioId != null) validarSprintDoProjeto(projetoId, sprintInicioId);
+        if (sprintFimId != null) validarSprintDoProjeto(projetoId, sprintFimId);
+        if (sprintInicioId != null && sprintFimId != null && sprintInicioId > sprintFimId) {
+            throw new IntervaloSprintsInvalidoException();
+        }
+
+        List<StatusTarefa> status = filtro.status();
+        List<Long> responsaveisIds = filtro.responsaveisIds();
+        Boolean impedimento = filtro.impedimento();
+
+        return tarefaRepository.findByProjetoId(projetoId).stream()
+                .filter(t -> sprintInicioId == null || (t.getSprintId() != null && t.getSprintId() >= sprintInicioId))
+                .filter(t -> sprintFimId == null || (t.getSprintId() != null && t.getSprintId() <= sprintFimId))
+                .filter(t -> status == null || status.isEmpty() || status.contains(t.getStatus()))
+                .filter(t -> impedimento == null || impedimento.equals(Boolean.TRUE.equals(t.getImpedimento())))
+                .map(this::converterParaDTO)
+                .filter(t -> responsaveisIds == null || responsaveisIds.isEmpty()
+                        || t.responsaveis().stream().anyMatch(r -> responsaveisIds.contains(r.id())))
                 .toList();
     }
 
@@ -368,6 +399,14 @@ public class TarefaService {
             throw new TarefaNaoPertenceAoProjetoException();
         }
         return tarefa;
+    }
+
+    private void validarSprintDoProjeto(Long projetoId, Long sprintId) {
+        Sprint sprint = sprintRepository.findById(sprintId)
+                .orElseThrow(SprintNaoEncontradaException::new);
+        if (!Objects.equals(sprint.getProjetoId(), projetoId)) {
+            throw new SprintNaoPertenceAoProjetoException();
+        }
     }
 
     private Usuario buscarUsuarioPorEmail(String email) {

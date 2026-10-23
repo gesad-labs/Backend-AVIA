@@ -29,4 +29,11 @@ public class SprintExceptionHandler {
                 .status(HttpStatus.BAD_REQUEST)
                 .body(new ErroResponseDTO(ex.getMessage()));
     }
+
+    @ExceptionHandler(IntervaloSprintsInvalidoException.class)
+    public ResponseEntity<ErroResponseDTO> handleIntervaloSprintsInvalido(IntervaloSprintsInvalidoException ex) {
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(new ErroResponseDTO(ex.getMessage()));
+    }
 }
