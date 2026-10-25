@@ -19,7 +19,7 @@ public interface TarefaRepository extends JpaRepository<Tarefa, Long> {
 
     List<Tarefa> findByProjetoId(Long projetoId);
 
-    Optional<Tarefa> findByIdAndProjetoId(Long id, Long projetoId);
+    Optional<Tarefa> findByIdAndProjetoId(Long tarefaId, Long projetoId);
 
     int countByTarefaParenteId(Long tarefaParenteId);
 
