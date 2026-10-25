@@ -9,6 +9,13 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 @RestControllerAdvice
 public class AnexoExceptionHandler {
 
+    @ExceptionHandler(TipoNaoPermitidoException.class)
+    public ResponseEntity<ErroResponseDTO> tipoNaoPermitidoHandler(TipoNaoPermitidoException ex){
+        return ResponseEntity
+                .status(HttpStatus.UNSUPPORTED_MEDIA_TYPE)
+                .body(new ErroResponseDTO("Tipo não permitido. Envie um Envie PDF, JPG, PNG ou DOCX"));
+    }
+
     @ExceptionHandler(AnexoNaoEncontradoException.class)
     public ResponseEntity<ErroResponseDTO> handleAnexoNaoEncontrado(AnexoNaoEncontradoException ex) {
         return ResponseEntity
