@@ -54,7 +54,7 @@ public class ArquivoValidator {
     }
 
     private boolean comecaCom(byte[] cabecalho, byte[] assinatura){
-        return cabecalho.length <= assinatura.length // garantir q o cabecalho é maior ou igual a assinatura para n dar erro
+        return cabecalho.length >= assinatura.length // garantir q o cabecalho é maior ou igual a assinatura para n dar erro
                 // como funciona, tu começa no cabecalho q vai de 0 ate assinatura.length, e compara com assinatura q vai de 0 ate assinatura.length
                && Arrays.equals(cabecalho, 0, assinatura.length, assinatura, 0, assinatura.length);
     }
