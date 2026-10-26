@@ -1,6 +1,8 @@
 package br.com.avia.avia_api.exception.auth;
 
+import br.com.avia.avia_api.entity.Usuario;
 import br.com.avia.avia_api.exception.ErroResponseDTO;
+import br.com.avia.avia_api.exception.projeto.UsuarioException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.AuthenticationException;
@@ -38,6 +40,13 @@ public class AuthExceptionHandler {
                 erros.computeIfAbsent(erro.getField(), k -> new ArrayList<>())
                         .add(erro.getDefaultMessage()));
         return ResponseEntity.badRequest().body(new ErroResponseDTO("Dados inválidos", erros));
+    }
+
+    @ExceptionHandler(UsuarioException.class)
+    public ResponseEntity<ErroResponseDTO> handleUsuarioNaoEncontrado(UsuarioNaoEncontradoException ex){
+        return ResponseEntity
+                .status(HttpStatus.NOT_FOUND)
+                .body(new ErroResponseDTO(ex.getMessage()));
     }
 
 }

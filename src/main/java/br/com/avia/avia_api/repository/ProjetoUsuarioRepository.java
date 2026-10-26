@@ -3,7 +3,6 @@ package br.com.avia.avia_api.repository;
 import br.com.avia.avia_api.entity.Papel;
 import br.com.avia.avia_api.entity.Projeto;
 import br.com.avia.avia_api.entity.ProjetoUsuario;
-import br.com.avia.avia_api.entity.Usuario;
 import br.com.avia.avia_api.enums.CargoProjeto;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
@@ -41,6 +40,7 @@ public interface ProjetoUsuarioRepository extends JpaRepository<ProjetoUsuario, 
     @Query("SELECT pu FROM ProjetoUsuario pu WHERE pu.projeto.id = :projetoId AND LOWER(pu.usuario.email) = LOWER(:email)")
     Optional<ProjetoUsuario> findByProjetoIdAndUsuarioEmail(@Param("projetoId") Long projetoId, @Param("email") String email);
 
+    List<ProjetoUsuario> findProjetoUsuarioByProjetoIdOrderById(Long projetoId);
     long countByProjeto_IdAndCargo(Long projetoId, CargoProjeto cargoProjeto);
     boolean existsByProjetoIdAndUsuarioId(Long projetoId, Long usuarioId);
 }
