@@ -10,5 +10,6 @@ public record EditarTarefaRequestDTO(
         PrioridadeTarefa prioridade,
         List<Long> responsaveisIds,
         Long tarefaParenteId,
-        String tipo
+        String tipo,
+        Long bloqueadaPorId
 ) {}

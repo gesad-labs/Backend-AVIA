@@ -1,10 +1,12 @@
 package br.com.avia.avia_api.repository;
 
 import br.com.avia.avia_api.entity.Tarefa;
+import br.com.avia.avia_api.enums.StatusTarefa;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface TarefaRepository extends JpaRepository<Tarefa, Long> {
@@ -17,5 +19,17 @@ public interface TarefaRepository extends JpaRepository<Tarefa, Long> {
 
     List<Tarefa> findByProjetoId(Long projetoId);
 
+    Optional<Tarefa> findByIdAndProjetoId(Long id, Long projetoId);
+
     int countByTarefaParenteId(Long tarefaParenteId);
+
+    int countByTarefaParenteIdAndStatus(Long tarefaParenteId, StatusTarefa status);
+
+    List<Tarefa> findByTarefaParenteId(Long tarefaParenteId);
+
+    boolean existsByTarefaParenteId(Long tarefaParenteId);
+
+    boolean existsByTarefaParenteIdAndStatusNot(Long tarefaParenteId, StatusTarefa status);
+
+    List<Tarefa> findByBloqueadaPorId(Long bloqueadaPorId);
 }
