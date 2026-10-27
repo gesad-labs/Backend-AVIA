@@ -1,0 +1,23 @@
+name: Build
+
+on:
+  workflow_call:
+
+jobs:
+  run-build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Download code
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      - name: Package (sem testes, já rodaram no job anterior)
+        run: ./mvnw -B -ntp -DskipTests package
