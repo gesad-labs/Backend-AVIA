@@ -1,0 +1,5 @@
+.git
+.github
+target
+*.md
+src/main/resources/application.properties
