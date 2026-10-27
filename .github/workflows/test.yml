@@ -1,0 +1,50 @@
+name: Test
+
+on:
+  workflow_call:
+
+jobs:
+  run-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: avia_test
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Download code
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      # O application.properties real não é versionado (.gitignore); o CI parte do exemplo
+      # e sobrescreve datasource, JWT e e-mail por variáveis de ambiente com valores descartáveis.
+      - name: Create application.properties from example
+        run: cp src/main/resources/application-example.properties src/main/resources/application.properties
+
+      - name: Run Unit Tests (Maven)
+        env:
+          SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/avia_test
+          SPRING_DATASOURCE_USERNAME: test_user
+          SPRING_DATASOURCE_PASSWORD: test_password
+          JWT_SECRET: ci-only-secret-ci-only-secret-ci-only-secret-0123456789
+          MAIL_USERNAME: ci@example.com
+          MAIL_PASSWORD: ci-only
+        run: ./mvnw -B -ntp test
