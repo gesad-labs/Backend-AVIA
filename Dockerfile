@@ -9,9 +9,11 @@ COPY mvnw .
 RUN --mount=type=cache,target=/root/.m2 mvn -B -ntp dependency:go-offline
 
 COPY src src
+COPY VERSION VERSION
 # O application.properties real não é versionado; parte-se do exemplo e todo valor
 # sensível chega por variável de ambiente (SPRING_DATASOURCE_*, JWT_SECRET, MAIL_*).
-RUN cp src/main/resources/application-example.properties src/main/resources/application.properties
+RUN cp src/main/resources/application-example.properties src/main/resources/application.properties \
+    && printf '\napp.version=%s\n' "$(cat VERSION)" >> src/main/resources/application.properties
 RUN --mount=type=cache,target=/root/.m2 mvn -B -ntp -DskipTests package \
     && cp target/*.jar app.jar
 
