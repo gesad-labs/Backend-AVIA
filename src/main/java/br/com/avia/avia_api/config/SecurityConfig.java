@@ -46,6 +46,7 @@ public class SecurityConfig {
                                 "/auth/recuperacao-senha",
                                 "/auth/redefinicao-senha",
                                 "/auth/redefinicao-senha",
+                                "/version",
                                 "/swagger-ui/**",
                                 "/v3/api-docs/**",
                                 "/ws",
