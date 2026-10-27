@@ -57,6 +57,18 @@ public class TarefasController {
         return ResponseEntity.ok(tarefa);
     }
 
+    @GetMapping("/{projetoId}/tarefas/{tarefaId}/subtarefas")
+    public ResponseEntity<List<TarefaResponseDTO>> listarSubtarefas(
+            @PathVariable Long projetoId,
+            @PathVariable Long tarefaId,
+            @AuthenticationPrincipal Jwt jwt
+    ) {
+        String emailMembro = jwt.getSubject();
+        List<TarefaResponseDTO> subtarefas =
+                tarefaService.listarSubtarefas(projetoId, tarefaId, emailMembro);
+        return ResponseEntity.ok(subtarefas);
+    }
+
     @GetMapping("/{projetoId}/tarefas")
     public ResponseEntity<List<TarefaResponseDTO>> listarTarefasDoProjeto(
             @PathVariable Long projetoId,
