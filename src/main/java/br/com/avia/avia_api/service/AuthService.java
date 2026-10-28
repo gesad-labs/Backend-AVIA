@@ -9,6 +9,7 @@ import br.com.avia.avia_api.exception.auth.UsuarioNaoEncontradoException;
 import br.com.avia.avia_api.repository.TokenRecuperacaoSenhaRepository;
 import br.com.avia.avia_api.repository.UsuarioRepository;
 import br.com.avia.avia_api.security.TokenService;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -19,6 +20,9 @@ import java.util.UUID;
 
 @Service
 public class AuthService {
+
+    @Value("${app.frontend-url:http://localhost:5173}")
+    private String frontendUrl;
 
     private final UsuarioRepository usuarioRepository;
     private final PasswordEncoder passwordEncoder;
@@ -99,7 +103,7 @@ public class AuthService {
 
         tokenRecuperacaoSenhaRepository.save(tokenRecuperacao);
 
-        String link = "http://localhost:5173/redefinir-senha?token=" + token;
+        String link = frontendUrl + "/redefinir-senha?token=" + token;
 
         emailService.enviarRecuperacaoSenha(usuario.getEmail(), link);
 
