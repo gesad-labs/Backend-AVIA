@@ -5,6 +5,7 @@ import br.com.avia.avia_api.dto.usuario.UsuarioResponse;
 import br.com.avia.avia_api.entity.TokenRecuperacaoSenha;
 import br.com.avia.avia_api.entity.Usuario;
 import br.com.avia.avia_api.exception.auth.EmailDuplicadoException;
+import br.com.avia.avia_api.exception.auth.TokenRecuperacaoInvalidoException;
 import br.com.avia.avia_api.exception.auth.UsuarioNaoEncontradoException;
 import br.com.avia.avia_api.repository.TokenRecuperacaoSenhaRepository;
 import br.com.avia.avia_api.repository.UsuarioRepository;
@@ -112,14 +113,14 @@ public class AuthService {
     public void redefinirSenha(RedefinicaoSenhaRequestDTO request) {
         TokenRecuperacaoSenha tokenRecuperacao = tokenRecuperacaoSenhaRepository
                 .findByToken(request.token())
-                .orElseThrow(() -> new RuntimeException("Token inválido"));
+                .orElseThrow(() -> new TokenRecuperacaoInvalidoException("Token inválido"));
 
         if (tokenRecuperacao.isUsado()) {
-            throw new RuntimeException("Token já utilizado");
+            throw new TokenRecuperacaoInvalidoException("Token já utilizado");
         }
 
         if (tokenRecuperacao.expirado()) {
-            throw new RuntimeException("Token expirado");
+            throw new TokenRecuperacaoInvalidoException("Token expirado");
         }
 
         Usuario usuario = tokenRecuperacao.getUsuario();
