@@ -1,5 +1,6 @@
 package br.com.avia.avia_api.service;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
@@ -9,6 +10,9 @@ public class EmailService {
 
     private final JavaMailSender mailSender;
 
+    @Value("${spring.mail.username}")
+    private String remetente;
+
     public EmailService(JavaMailSender mailSender) {
         this.mailSender = mailSender;
     }
@@ -16,6 +20,7 @@ public class EmailService {
     public void enviarRecuperacaoSenha(String destinatario, String link) {
         SimpleMailMessage mensagem = new SimpleMailMessage();
 
+        mensagem.setFrom(remetente);
         mensagem.setTo(destinatario);
         mensagem.setSubject("Recuperação de senha - AVIA");
         mensagem.setText("""
