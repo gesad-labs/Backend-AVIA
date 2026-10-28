@@ -21,4 +21,11 @@ public class AuthExceptionHandler {
                 .status(HttpStatus.CONFLICT)
                 .body(new ErroResponseDTO(ex.getMessage()));
     }
+
+    @ExceptionHandler(TokenRecuperacaoInvalidoException.class)
+    public ResponseEntity<ErroResponseDTO> handleTokenRecuperacaoInvalido(TokenRecuperacaoInvalidoException ex) {
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(new ErroResponseDTO(ex.getMessage()));
+    }
 }
