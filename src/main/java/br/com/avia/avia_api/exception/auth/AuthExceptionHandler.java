@@ -48,7 +48,7 @@ public class AuthExceptionHandler {
         return ResponseEntity.badRequest().body(new ErroResponseDTO("Dados inválidos", erros));
     }
 
-    @ExceptionHandler(UsuarioException.class)
+    @ExceptionHandler(UsuarioNaoEncontradoException.class)
     public ResponseEntity<ErroResponseDTO> handleUsuarioNaoEncontrado(UsuarioNaoEncontradoException ex){
         return ResponseEntity
                 .status(HttpStatus.NOT_FOUND)
