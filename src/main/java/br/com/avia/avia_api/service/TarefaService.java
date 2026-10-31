@@ -416,7 +416,7 @@ public class TarefaService {
 
     private void verificarPermissao(Long projetoId, Long usuarioId, String... permissoesAceitas) {
         ProjetoUsuario membro = projetoUsuarioRepository.findByUsuarioIdAndProjetoId(usuarioId, projetoId)
-                .orElseThrow(() -> new RuntimeException("Usuário não é membro do projeto."));
+                .orElseThrow(PermissaoNegadaException::new);
 
         List<Permissao> permissoes = membro.getPermissoes().isEmpty()
                 ? new ArrayList<>(membro.getPapel().getPermissoes())
