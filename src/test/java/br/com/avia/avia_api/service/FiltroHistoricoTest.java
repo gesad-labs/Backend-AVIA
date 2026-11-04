@@ -203,7 +203,7 @@ class FiltroHistoricoTest {
                 .thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> filtrar(new FiltroHistoricoDTO(null, null, null, null, null)))
-                .hasMessage("Usuário não é membro do projeto.");
+                .isInstanceOf(PermissaoNegadaException.class);
     }
 
     // ---- Auxiliares ----
