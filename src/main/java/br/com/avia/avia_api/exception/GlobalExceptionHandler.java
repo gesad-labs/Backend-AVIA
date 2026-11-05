@@ -32,6 +32,11 @@ public class GlobalExceptionHandler {
 
     static final String MENSAGEM_ERRO_INESPERADO = "Ocorreu um erro inesperado.";
 
+    @ExceptionHandler(AviaException.class)
+    public ResponseEntity<ErroResponseDTO> handleErroDeNegocio(AviaException ex) {
+        return erro(ex.getStatus(), ex.getMessage());
+    }
+
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<ErroResponseDTO> handleCorpoInvalido(HttpMessageNotReadableException ex) {
         String campo = campoComErro(ex);

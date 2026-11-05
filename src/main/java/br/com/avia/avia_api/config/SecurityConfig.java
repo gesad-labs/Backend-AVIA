@@ -1,5 +1,6 @@
 package br.com.avia.avia_api.config;
 
+import br.com.avia.avia_api.exception.SegurancaExceptionHandler;
 import com.nimbusds.jose.jwk.source.ImmutableSecret;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -35,7 +36,8 @@ public class SecurityConfig {
     private String[] allowedOrigins;
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http,
+                                                   SegurancaExceptionHandler segurancaExceptionHandler) throws Exception {
         return http
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(csrf -> csrf.disable())
@@ -50,11 +52,20 @@ public class SecurityConfig {
                                 "/swagger-ui/**",
                                 "/v3/api-docs/**",
                                 "/ws",
-                                "/ws/**"
+                                "/ws/**",
+                                "/error"
                         ).permitAll()
                         .anyRequest().authenticated()
                 )
-                .oauth2ResourceServer(oauth2 -> oauth2.jwt(Customizer.withDefaults()))
+                .exceptionHandling(exceptions -> exceptions
+                        .authenticationEntryPoint(segurancaExceptionHandler)
+                        .accessDeniedHandler(segurancaExceptionHandler)
+                )
+                .oauth2ResourceServer(oauth2 -> oauth2
+                        .jwt(Customizer.withDefaults())
+                        .authenticationEntryPoint(segurancaExceptionHandler)
+                        .accessDeniedHandler(segurancaExceptionHandler)
+                )
                 .build();
     }
 
