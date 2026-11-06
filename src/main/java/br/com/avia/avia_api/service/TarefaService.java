@@ -2,18 +2,23 @@ package br.com.avia.avia_api.service;
 
 import br.com.avia.avia_api.dto.tarefa.*;
 import br.com.avia.avia_api.entity.*;
+import br.com.avia.avia_api.enums.StatusTarefa;
 import br.com.avia.avia_api.exception.permissao.PermissaoNegadaException;
 import br.com.avia.avia_api.exception.sprint.SprintNaoEncontradaException;
 import br.com.avia.avia_api.exception.sprint.SprintNaoPertenceAoProjetoException;
-import br.com.avia.avia_api.exception.tarefa.TarefaNaoEncontradaException;
-import br.com.avia.avia_api.exception.tarefa.TarefaNaoPertenceAoProjetoException;
+import br.com.avia.avia_api.exception.tarefa.*;
 import br.com.avia.avia_api.repository.*;
 import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Deque;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
 
 @Service
 public class TarefaService {
@@ -44,10 +49,15 @@ public class TarefaService {
     @Transactional
     public TarefaResponseDTO criarTarefa(Long projetoId, CriarTarefaRequestDTO dto, String emailMembro) {
         Usuario membro = buscarUsuarioPorEmail(emailMembro);
-        verificarPermissao(projetoId, membro.getId(), "CRIARTAREFAS");
 
         Long sprintId = dto.sprintId();
         Long tarefaParenteId = dto.tarefaParenteId();
+
+        if (tarefaParenteId != null) {
+            verificarPermissao(projetoId, membro.getId(), "CRIARSUBTAREFAS", "CRIARTAREFAS");
+        } else {
+            verificarPermissao(projetoId, membro.getId(), "CRIARTAREFAS");
+        }
 
         if (sprintId != null) {
             Sprint sprint = sprintRepository.findById(sprintId)
@@ -58,7 +68,8 @@ public class TarefaService {
         }
 
         if (tarefaParenteId != null) {
-            buscarTarefaDoProjeto(projetoId, tarefaParenteId);
+            Tarefa pai = buscarTarefaDoProjeto(projetoId, tarefaParenteId);
+            validarPai(pai, null, dto.status());
         }
 
         Tarefa tarefa = new Tarefa(
@@ -74,6 +85,14 @@ public class TarefaService {
         );
 
         if (dto.tipo() != null) tarefa.setTipo(dto.tipo());
+
+        if (dto.bloqueadaPorId() != null) {
+            tarefa.setBloqueadaPorId(dto.bloqueadaPorId());
+            Tarefa predecessora = validarBloqueio(projetoId, tarefa);
+            if (dto.status() == StatusTarefa.FAZENDO && predecessora.getStatus() != StatusTarefa.CONCLUIDA) {
+                throw new TarefaBloqueadaException(predecessora.getTitulo());
+            }
+        }
 
         Tarefa tarefaSalva = tarefaRepository.save(tarefa);
 
@@ -93,6 +112,12 @@ public class TarefaService {
         Usuario membro = buscarUsuarioPorEmail(emailMembro);
         verificarPermissao(projetoId, membro.getId(), "EXCLUIRTAREFAS");
         Tarefa tarefa = buscarTarefaDoProjeto(projetoId, tarefaId);
+        if (tarefaRepository.existsByTarefaParenteId(tarefaId)) {
+            throw new TarefaPossuiSubtarefasException();
+        }
+        List<Tarefa> bloqueadasPorEla = tarefaRepository.findByBloqueadaPorId(tarefaId);
+        bloqueadasPorEla.forEach(t -> t.setBloqueadaPorId(null));
+        tarefaRepository.saveAll(bloqueadasPorEla);
         tarefaProjetoUsuarioRepository.deleteByTarefaId(tarefaId);
         tarefaRepository.delete(tarefa);
     }
@@ -111,6 +136,19 @@ public class TarefaService {
     public TarefaResponseDTO buscarTarefaPorId(Long projetoId, Long tarefaId) {
         Tarefa tarefa = buscarTarefaDoProjeto(projetoId, tarefaId);
         return converterParaDTO(tarefa);
+    }
+
+    @Transactional
+    public List<TarefaResponseDTO> listarSubtarefas(Long projetoId, Long tarefaId, String emailMembro) {
+        Usuario membro = buscarUsuarioPorEmail(emailMembro);
+        verificarPermissao(projetoId, membro.getId(), "VISUALIZARPROJETO");
+
+        Tarefa pai = tarefaRepository.findByIdAndProjetoId(tarefaId, projetoId)
+                .orElseThrow(TarefaNaoEncontradaException::new);
+
+        return tarefaRepository.findByTarefaParenteId(pai.getId()).stream()
+                .map(this::converterParaDTO)
+                .toList();
     }
 
     @Transactional
@@ -150,9 +188,19 @@ public class TarefaService {
             if (dto.tarefaParenteId() == -1L) {
                 tarefa.setTarefaParenteId(null);
             } else {
-                buscarTarefaDoProjeto(projetoId, dto.tarefaParenteId());
-                tarefa.setTarefaParenteId(dto.tarefaParenteId());
+                Tarefa pai = buscarTarefaDoProjeto(projetoId, dto.tarefaParenteId());
+                validarPai(pai, tarefaId, tarefa.getStatus());
+                tarefa.setTarefaParenteId(pai.getId());
             }
+        }
+
+        if (dto.bloqueadaPorId() != null) {
+            tarefa.setBloqueadaPorId(dto.bloqueadaPorId() == -1L ? null : dto.bloqueadaPorId());
+        }
+
+        boolean dependenciaAlterada = dto.bloqueadaPorId() != null || dto.tarefaParenteId() != null;
+        if (dependenciaAlterada && tarefa.getBloqueadaPorId() != null) {
+            validarBloqueio(projetoId, tarefa);
         }
 
         if (dto.tipo() != null) tarefa.setTipo(dto.tipo());
@@ -186,6 +234,7 @@ public class TarefaService {
         Usuario membro = buscarUsuarioPorEmail(emailMembro);
         verificarPermissao(projetoId, membro.getId(), "MOVERTAREFAS");
         Tarefa tarefa = buscarTarefaDoProjeto(projetoId, tarefaId);
+        validarTransicaoStatus(tarefa, dto.status());
         tarefa.setStatus(dto.status());
         return converterParaDTO(tarefaRepository.save(tarefa));
     }
@@ -199,6 +248,7 @@ public class TarefaService {
                 .toList();
 
         int subtarefasCount = tarefaRepository.countByTarefaParenteId(tarefa.getId());
+        int subtarefasConcluidasCount = tarefaRepository.countByTarefaParenteIdAndStatus(tarefa.getId(), StatusTarefa.CONCLUIDA);
         int anexosCount = anexoRepository.countByTarefaId(tarefa.getId());
 
         return new TarefaResponseDTO(
@@ -211,11 +261,104 @@ public class TarefaService {
                 tarefa.getPrioridade(),
                 tarefa.getTarefaParenteId(),
                 tarefa.getImpedimento(),
+                tarefa.getBloqueadaPorId(),
+                buscarPredecessoraPendente(tarefa).isPresent(),
                 responsaveis,
                 tarefa.getTipo(),
                 subtarefasCount,
+                subtarefasConcluidasCount,
                 anexosCount
         );
+    }
+
+    private void validarPai(Tarefa pai, Long filhoId, StatusTarefa statusFilho) {
+        if (Objects.equals(pai.getId(), filhoId)) {
+            throw new HierarquiaTarefaInvalidaException("Uma tarefa não pode ser subtarefa de si mesma");
+        }
+        if (pai.getTarefaParenteId() != null) {
+            throw new HierarquiaTarefaInvalidaException("Não é possível criar subtarefa de uma subtarefa");
+        }
+        if (filhoId != null && tarefaRepository.existsByTarefaParenteId(filhoId)) {
+            throw new HierarquiaTarefaInvalidaException("Uma tarefa que possui subtarefas não pode se tornar subtarefa");
+        }
+        if (filhoId != null && Objects.equals(pai.getBloqueadaPorId(), filhoId)) {
+            throw new DependenciaInvalidaException("Uma tarefa não pode se tornar subtarefa de uma tarefa que ela bloqueia");
+        }
+        if (pai.getStatus() == StatusTarefa.CONCLUIDA && statusFilho != StatusTarefa.CONCLUIDA) {
+            throw new TarefaPaiConcluidaException();
+        }
+    }
+
+    private void validarTransicaoStatus(Tarefa tarefa, StatusTarefa novoStatus) {
+        if (novoStatus == StatusTarefa.FAZENDO && tarefa.getStatus() != StatusTarefa.FAZENDO) {
+            buscarPredecessoraPendente(tarefa).ifPresent(predecessora -> {
+                throw new TarefaBloqueadaException(predecessora.getTitulo());
+            });
+        }
+
+        boolean concluindo = novoStatus == StatusTarefa.CONCLUIDA;
+        if (concluindo && tarefaRepository.existsByTarefaParenteIdAndStatusNot(tarefa.getId(), StatusTarefa.CONCLUIDA)) {
+            throw new SubtarefasPendentesException();
+        }
+
+        boolean reabrindo = tarefa.getStatus() == StatusTarefa.CONCLUIDA && !concluindo;
+        if (reabrindo && tarefa.getTarefaParenteId() != null) {
+            boolean paiConcluido = tarefaRepository.findById(tarefa.getTarefaParenteId())
+                    .map(pai -> pai.getStatus() == StatusTarefa.CONCLUIDA)
+                    .orElse(false);
+            if (paiConcluido) {
+                throw new TarefaPaiConcluidaException();
+            }
+        }
+    }
+
+    private Optional<Tarefa> buscarPredecessoraPendente(Tarefa tarefa) {
+        if (tarefa.getBloqueadaPorId() == null) {
+            return Optional.empty();
+        }
+        return tarefaRepository.findById(tarefa.getBloqueadaPorId())
+                .filter(predecessora -> predecessora.getStatus() != StatusTarefa.CONCLUIDA);
+    }
+
+    private Tarefa validarBloqueio(Long projetoId, Tarefa tarefa) {
+        Tarefa predecessora = buscarTarefaDoProjeto(projetoId, tarefa.getBloqueadaPorId());
+        if (Objects.equals(predecessora.getId(), tarefa.getId())) {
+            throw new DependenciaInvalidaException("Uma tarefa não pode ser bloqueada por si mesma");
+        }
+        boolean predecessoraEhPai = Objects.equals(predecessora.getId(), tarefa.getTarefaParenteId());
+        boolean predecessoraEhSubtarefa = tarefa.getId() != null
+                && Objects.equals(predecessora.getTarefaParenteId(), tarefa.getId());
+        if (predecessoraEhPai || predecessoraEhSubtarefa) {
+            throw new DependenciaInvalidaException("Uma tarefa não pode ser bloqueada pela própria tarefa pai nem por uma de suas subtarefas");
+        }
+        if (formaCiclo(predecessora, tarefa)) {
+            throw new DependenciaCircularException();
+        }
+        return predecessora;
+    }
+
+    // Percorre tudo o que precisa ser concluído antes da predecessora (quem a bloqueia e suas subtarefas).
+    // Se a própria tarefa ou a tarefa pai dela estiver nesse caminho, nenhuma delas consegue terminar.
+    private boolean formaCiclo(Tarefa predecessora, Tarefa tarefa) {
+        Set<Long> alvos = new HashSet<>();
+        if (tarefa.getId() != null) alvos.add(tarefa.getId());
+        if (tarefa.getTarefaParenteId() != null) alvos.add(tarefa.getTarefaParenteId());
+
+        Deque<Tarefa> pendentes = new ArrayDeque<>();
+        pendentes.push(predecessora);
+        Set<Long> visitadas = new HashSet<>();
+
+        while (!pendentes.isEmpty()) {
+            Tarefa atual = pendentes.pop();
+            if (!visitadas.add(atual.getId())) continue;
+            if (alvos.contains(atual.getId())) return true;
+
+            if (atual.getBloqueadaPorId() != null) {
+                tarefaRepository.findById(atual.getBloqueadaPorId()).ifPresent(pendentes::push);
+            }
+            tarefaRepository.findByTarefaParenteId(atual.getId()).forEach(pendentes::push);
+        }
+        return false;
     }
 
     private Tarefa buscarTarefaDoProjeto(Long projetoId, Long tarefaId) {
@@ -232,7 +375,7 @@ public class TarefaService {
                 .orElseThrow(() -> new RuntimeException("Usuário autenticado não encontrado."));
     }
 
-    private void verificarPermissao(Long projetoId, Long usuarioId, String permissaoLabel) {
+    private void verificarPermissao(Long projetoId, Long usuarioId, String... permissoesAceitas) {
         ProjetoUsuario membro = projetoUsuarioRepository.findByUsuarioIdAndProjetoId(usuarioId, projetoId)
                 .orElseThrow(() -> new RuntimeException("Usuário não é membro do projeto."));
 
@@ -240,8 +383,9 @@ public class TarefaService {
                 ? new ArrayList<>(membro.getPapel().getPermissoes())
                 : membro.getPermissoes();
 
+        List<String> aceitas = List.of(permissoesAceitas);
         boolean possuiPermissao = permissoes.stream()
-                .anyMatch(p -> p.getDescricao().equals(permissaoLabel));
+                .anyMatch(p -> aceitas.contains(p.getDescricao()));
 
         if (!possuiPermissao)
             throw new PermissaoNegadaException();

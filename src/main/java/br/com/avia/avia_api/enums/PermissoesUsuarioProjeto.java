@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonValue;
 
 public enum PermissoesUsuarioProjeto {
     CRIARTAREFAS("Criar Tarefas"),
+    CRIARSUBTAREFAS("Criar Subtarefas"),
     EDITARTAREFAS("Editar Tarefas"),
     EXCLUIRTAREFAS("Excluir Tarefas"),
     MOVERTAREFAS("Mover Tarefas"),

@@ -17,7 +17,7 @@ import java.util.Map;
 public class DataInitializer implements ApplicationRunner {
 
     private static final String[] TODAS_PERMISSOES = {
-        "CRIARTAREFAS", "EDITARTAREFAS", "EXCLUIRTAREFAS", "MOVERTAREFAS",
+        "CRIARTAREFAS", "CRIARSUBTAREFAS", "EDITARTAREFAS", "EXCLUIRTAREFAS", "MOVERTAREFAS",
         "CRIARCOLUNAS", "EDITARESTRUTURA", "GERENCIARSPRINTS",
         "ADICIONARMEMBROS", "REMOVERMEMBROS", "VISUALIZARPROJETO"
     };
@@ -25,7 +25,7 @@ public class DataInitializer implements ApplicationRunner {
     private static final Map<String, String[]> PAPEL_PERMISSOES = Map.of(
         "GERENTE", TODAS_PERMISSOES,
         "MEMBRO", new String[]{
-            "CRIARTAREFAS", "EDITARTAREFAS", "MOVERTAREFAS", "VISUALIZARPROJETO"
+            "CRIARSUBTAREFAS", "EDITARTAREFAS", "MOVERTAREFAS", "VISUALIZARPROJETO"
         },
         "VISUALIZADOR", new String[]{
             "VISUALIZARPROJETO"

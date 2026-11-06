@@ -14,8 +14,11 @@ public record TarefaResponseDTO(
         PrioridadeTarefa prioridade,
         Long tarefaParenteId,
         Boolean impedimento,
+        Long bloqueadaPorId,
+        Boolean bloqueada,
         List<ResponsavelDTO> responsaveis,
         String tipo,
         Integer subtarefasCount,
+        Integer subtarefasConcluidasCount,
         Integer anexosCount
 ) {}
