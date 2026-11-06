@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 import tools.jackson.core.JacksonException;
+import tools.jackson.core.exc.StreamReadException;
 
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -63,7 +64,9 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
     public ResponseEntity<ErroResponseDTO> handleMetodoNaoPermitido(HttpRequestMethodNotSupportedException ex) {
-        return erro(HttpStatus.METHOD_NOT_ALLOWED, "Método não permitido para este recurso.");
+        return ResponseEntity.status(HttpStatus.METHOD_NOT_ALLOWED)
+                .headers(ex.getHeaders())
+                .body(new ErroResponseDTO("Método não permitido para este recurso."));
     }
 
     @ExceptionHandler(HttpMediaTypeNotSupportedException.class)
@@ -122,7 +125,10 @@ public class GlobalExceptionHandler {
         while (causa != null && !(causa instanceof JacksonException)) {
             causa = causa.getCause();
         }
-        if (!(causa instanceof JacksonException erroJackson) || erroJackson.getPath().isEmpty()) {
+        // Erro de sintaxe também pode vir com o caminho do campo, mas o problema é o JSON inteiro
+        if (!(causa instanceof JacksonException erroJackson)
+                || erroJackson instanceof StreamReadException
+                || erroJackson.getPath().isEmpty()) {
             return null;
         }
 
