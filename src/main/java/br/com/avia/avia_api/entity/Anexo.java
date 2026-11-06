@@ -1,42 +1,54 @@
 package br.com.avia.avia_api.entity;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import br.com.avia.avia_api.enums.TipoAnexo;
+import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "anexos")
 public class Anexo {
-    
+    //o anexo deve ser excluido com a tarefa?
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
-    @Getter private int id;
+    @Getter private Long id;
 
-    @Column(name = "tarefa_id")
-    @Getter @Setter private Long tarefaId;
+    @Column(name = "tarefa_id", nullable = false)
+    @Getter private Long tarefaId;
 
-    @Column(name = "nome")
-    @Getter @Setter private String nome;
+    @Column(name = "nome", nullable = false)
+    @Getter private String nomeArquivo;
 
-    @Column(name = "tipo_arquivo")
-    @Getter @Setter private String tipoArquivo;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "usuario_id", nullable = false)
+    @Getter private Usuario enviadoPor;
 
-    @Column(name = "url")
-    @Getter @Setter private String url;
+    @Column(name = "tamanho_bytes", nullable = false)
+    @Getter private Long tamanhoBytes;
 
-    public Anexo() {
-    }
+    @Column(name = "data_criacao", nullable = false)
+    @Getter private LocalDateTime criadoEm;
 
-    public Anexo(long tarefaId, String nome, String tipoArquivo, String url) {
+    @Enumerated(EnumType.STRING)
+    @Column(name = "tipo_arquivo", nullable = false)
+    @Getter private TipoAnexo tipoAnexo;
+
+    @Column(name = "chave_armazenamento", nullable = false, unique = true)
+    @Getter private String chaveArmazenamento;
+
+    public Anexo() {}
+    public Anexo(Long tarefaId, Long tamanhoBytes, TipoAnexo tipoArquivo, String chaveArmazenamento,
+                 LocalDateTime criadoEm, Usuario enviadoPor, String nomeArquivo) {
         this.tarefaId = tarefaId;
-        this.nome = nome;
-        this.tipoArquivo = tipoArquivo;
-        this.url = url;
+        this.tamanhoBytes = tamanhoBytes;
+        this.tipoAnexo = tipoArquivo;
+        this.chaveArmazenamento = chaveArmazenamento;
+        this.criadoEm = criadoEm;
+        this.enviadoPor = enviadoPor;
+        this.nomeArquivo = nomeArquivo;
     }
 }

@@ -25,7 +25,7 @@ public class NotificacaoProjetoUsuario {
     public NotificacaoProjetoUsuario(Long projetoId, Usuario usuario, Notificacao notificacao){
        this.projetoId = Objects.requireNonNull(projetoId, "O id do projeto é obrigatório");
        this.usuario = Objects.requireNonNull(usuario, "O usuário é obrigatório");
-       this.notificacao = Objects.requireNonNull(notificacao, "A notificação é obritaória");
+       this.notificacao = Objects.requireNonNull(notificacao, "A notificação é obrigatória");
     }
 
     @Id

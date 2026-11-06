@@ -101,7 +101,7 @@ public class ProjetoService {
             throw new RuntimeException("Você não tem permissão para visualizar os membros deste projeto.");
         }
 
-        List<ProjetoUsuario> membros = projetoUsuarioRepository.findMembrosByProjetoId(idProjeto);
+        List<ProjetoUsuario> membros = projetoUsuarioRepository.findProjetoUsuarioByProjetoIdOrderById(idProjeto);
 
         return membros.stream()
                 .map(this::converterMembroParaDTO)
