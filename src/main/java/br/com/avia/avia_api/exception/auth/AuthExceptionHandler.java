@@ -14,8 +14,11 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
 
 @RestControllerAdvice
+@Order(Ordered.HIGHEST_PRECEDENCE)
 public class AuthExceptionHandler {
     // troquei o metodo para receber o exception lançado pelo authenticationManager
     // que ja faz a verificação tanto de email como de senha, de forma mais segura
@@ -23,7 +26,7 @@ public class AuthExceptionHandler {
     public ResponseEntity<ErroResponseDTO> handleUsuarioNaoEncontrado(AuthenticationException ex) {
         return ResponseEntity
                 .status(HttpStatus.UNAUTHORIZED)
-                .body(new ErroResponseDTO("Credenciais inválidas"));
+                .body(new ErroResponseDTO("E-mail ou senha inválidos."));
 
     }
     @ExceptionHandler(EmailDuplicadoException.class)

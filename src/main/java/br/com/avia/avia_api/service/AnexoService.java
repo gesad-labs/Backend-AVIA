@@ -136,7 +136,7 @@ public class AnexoService {
 
     private ProjetoUsuario buscarMembroProjeto(Long projetoId, String emailMembro){
         return projetoUsuarioRepository.findByProjetoIdAndUsuarioEmail(projetoId, emailMembro)
-                .orElseThrow(UsuarioNaoEncontradoException::new);
+                .orElseThrow(() -> new UsuarioNaoEncontradoException("Usuario não encontrado"));
         // nao passar informações de dentro pra quem é de fora
     }
 

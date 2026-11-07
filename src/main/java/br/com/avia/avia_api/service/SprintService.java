@@ -3,6 +3,8 @@ package br.com.avia.avia_api.service;
 import br.com.avia.avia_api.dto.sprint.*;
 import br.com.avia.avia_api.entity.*;
 import br.com.avia.avia_api.enums.StatusSprint;
+import br.com.avia.avia_api.exception.RecursoNaoEncontradoException;
+import br.com.avia.avia_api.exception.SessaoInvalidaException;
 import br.com.avia.avia_api.exception.permissao.PermissaoNegadaException;
 import br.com.avia.avia_api.exception.sprint.SprintJaExisteException;
 import br.com.avia.avia_api.exception.sprint.SprintNaoEncontradaException;
@@ -40,7 +42,7 @@ public class SprintService {
         verificarPermissao(projetoId, usuarioLogado.getId(), "GERENCIARSPRINTS");
 
         Projeto projeto = projetoRepository.findById(projetoId)
-                .orElseThrow(() -> new RuntimeException("Projeto não encontrado"));
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Projeto não encontrado."));
 
         boolean sprintJaExiste = sprintRepository
                 .existsByProjetoIdAndNome(projetoId, dto.nome());
@@ -67,7 +69,7 @@ public class SprintService {
         Usuario usuarioLogado = buscarUsuarioPorEmail(emailUsuario);
 
         Projeto projeto = projetoRepository.findById(projetoId)
-                .orElseThrow(() -> new RuntimeException("Projeto não encontrado"));
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Projeto não encontrado."));
 
         List<Sprint> sprints = sprintRepository.findByProjetoId(projetoId);
 
@@ -106,12 +108,12 @@ public class SprintService {
 
     private Usuario buscarUsuarioPorEmail(String email) {
         return usuarioRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
+                .orElseThrow(SessaoInvalidaException::new);
     }
 
     private void verificarPermissao(Long projetoId, Long usuarioId, String permissaoLabel){
         ProjetoUsuario membro = projetoUsuarioRepository.findByUsuarioIdAndProjetoId(usuarioId, projetoId)
-                .orElseThrow(() -> new RuntimeException("Usuário não é membro do projeto."));
+                .orElseThrow(PermissaoNegadaException::new);
         List<Permissao> membroPermissoes = membro.getPermissoes();
 
         boolean possuiPermissao = membroPermissoes.stream()

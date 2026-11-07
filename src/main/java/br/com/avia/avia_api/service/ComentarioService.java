@@ -5,6 +5,11 @@ import br.com.avia.avia_api.dto.comentario.CriarComentarioRequestDTO;
 import br.com.avia.avia_api.entity.Comentario;
 import br.com.avia.avia_api.entity.ProjetoUsuario;
 import br.com.avia.avia_api.entity.Tarefa;
+import br.com.avia.avia_api.exception.RecursoNaoEncontradoException;
+import br.com.avia.avia_api.exception.RequisicaoInvalidaException;
+import br.com.avia.avia_api.exception.permissao.PermissaoNegadaException;
+import br.com.avia.avia_api.exception.tarefa.TarefaNaoEncontradaException;
+import br.com.avia.avia_api.exception.tarefa.TarefaNaoPertenceAoProjetoException;
 import br.com.avia.avia_api.repository.ComentarioRepository;
 import br.com.avia.avia_api.repository.ProjetoUsuarioRepository;
 import br.com.avia.avia_api.repository.TarefaRepository;
@@ -43,14 +48,14 @@ public class ComentarioService {
     @Transactional
     public ComentarioResponseDTO criarComentario(Long projetoId, Long tarefaId, CriarComentarioRequestDTO dto, String emailUsuario) {
         Tarefa tarefa = tarefaRepository.findById(tarefaId)
-                .orElseThrow(() -> new RuntimeException("Tarefa não encontrada"));
+                .orElseThrow(TarefaNaoEncontradaException::new);
 
         if (!Objects.equals(tarefa.getProjetoId(), projetoId)) {
-            throw new RuntimeException("Tarefa não pertence a esse projeto");
+            throw new TarefaNaoPertenceAoProjetoException();
         }
 
         ProjetoUsuario autor = projetoUsuarioRepository.findByProjetoIdAndUsuarioEmail(projetoId, emailUsuario)
-                .orElseThrow(() -> new RuntimeException("Usuário não é membro do projeto."));
+                .orElseThrow(PermissaoNegadaException::new);
 
         Comentario comentario = new Comentario(tarefaId, dto.descricao(), autor.getId());
         Comentario salvo = comentarioRepository.save(comentario);
@@ -61,7 +66,7 @@ public class ComentarioService {
 
     public List<ComentarioResponseDTO> listarComentarios(Long tarefaId) {
         tarefaRepository.findById(tarefaId)
-                .orElseThrow(() -> new RuntimeException("Tarefa não encontrada"));
+                .orElseThrow(TarefaNaoEncontradaException::new);
         return comentarioRepository.findByTarefaIdOrderByIdAsc(tarefaId)
                 .stream()
                 .map(this::converterParaDTO)
@@ -71,7 +76,7 @@ public class ComentarioService {
     @Transactional
     public ComentarioResponseDTO alterarFlag(Long comentarioId) {
         Comentario comentario = comentarioRepository.findById(comentarioId)
-                .orElseThrow(() -> new RuntimeException("Comentário não encontrado"));
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Comentário não encontrado."));
         comentario.setImpedimento(!comentario.isImpedimento());
         return converterParaDTO(comentarioRepository.save(comentario));
     }
@@ -79,9 +84,9 @@ public class ComentarioService {
     @Transactional
     public void deletarComentario(Long tarefaId, Long comentarioId) {
         Comentario comentario = comentarioRepository.findById(comentarioId)
-                .orElseThrow(() -> new RuntimeException("Comentário não encontrado"));
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Comentário não encontrado."));
         if (!comentario.getTarefaId().equals(tarefaId)) {
-            throw new RuntimeException("Comentário não pertence a essa tarefa");
+            throw new RequisicaoInvalidaException("Comentário não pertence a essa tarefa.");
         }
         comentarioRepository.delete(comentario);
     }
@@ -89,9 +94,9 @@ public class ComentarioService {
     @Transactional
     public ComentarioResponseDTO editarComentario(Long tarefaId, Long comentarioId, String novaDescricao) {
         Comentario comentario = comentarioRepository.findById(comentarioId)
-                .orElseThrow(() -> new RuntimeException("Comentário não encontrado"));
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Comentário não encontrado."));
         if (!comentario.getTarefaId().equals(tarefaId)) {
-            throw new RuntimeException("Comentário não pertence a essa tarefa");
+            throw new RequisicaoInvalidaException("Comentário não pertence a essa tarefa.");
         }
         comentario.setDescricao(novaDescricao);
         return converterParaDTO(comentarioRepository.save(comentario));

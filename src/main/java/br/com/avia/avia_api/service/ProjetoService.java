@@ -6,6 +6,10 @@ import br.com.avia.avia_api.entity.*;
 import br.com.avia.avia_api.enums.CargoProjeto;
 import br.com.avia.avia_api.enums.PapelProjeto;
 import br.com.avia.avia_api.enums.PermissoesUsuarioProjeto;
+import br.com.avia.avia_api.exception.ConflitoException;
+import br.com.avia.avia_api.exception.RecursoNaoEncontradoException;
+import br.com.avia.avia_api.exception.RequisicaoInvalidaException;
+import br.com.avia.avia_api.exception.SessaoInvalidaException;
 import br.com.avia.avia_api.exception.permissao.PermissaoNegadaException;
 import br.com.avia.avia_api.exception.projeto.CargoException;
 import br.com.avia.avia_api.exception.projeto.ProjetoNaoEncontradoException;
@@ -53,7 +57,7 @@ public class ProjetoService {
 
         String papelGerente = PapelProjeto.GERENTE.name();
         Papel papel = papelRepository.findByNome(papelGerente)
-                .orElseThrow(() -> new RuntimeException("Papel inexistente."));
+                .orElseThrow(() -> new IllegalStateException("Papel Inexistente"));
         List<Permissao> permissoesGerente = new ArrayList<>(papel.getPermissoes());
 
         ProjetoUsuario vinculoGerente = new ProjetoUsuario(CargoProjeto.GERENTE, usuarioLogado, projetoSalvo, papel);
@@ -98,7 +102,7 @@ public class ProjetoService {
         boolean temAcesso = projetosDoUsuario.stream().anyMatch(p -> p.getId() == idProjeto);
 
         if (!temAcesso) {
-            throw new RuntimeException("Você não tem permissão para visualizar os membros deste projeto.");
+            throw new PermissaoNegadaException("Você não tem permissão para visualizar os membros deste projeto.");
         }
 
         List<ProjetoUsuario> membros = projetoUsuarioRepository.findProjetoUsuarioByProjetoIdOrderById(idProjeto);
@@ -165,26 +169,26 @@ public class ProjetoService {
         verificarPermissao(projetoId, membro.getId(), PermissoesUsuarioProjeto.ADICIONARMEMBROS);
 
         if (!dto.cargo().isAtribuivel()) {
-            throw new RuntimeException("Este cargo não pode ser atribuído manualmente.");
+            throw new RequisicaoInvalidaException("Este cargo não pode ser atribuído manualmente.");
         }
         if (!dto.papel().isAtribuivel()) {
-            throw new RuntimeException("Este papel não pode ser atribuído manualmente.");
+            throw new RequisicaoInvalidaException("Este papel não pode ser atribuído manualmente.");
         }
         validarCargoEPapel(dto.cargo(), dto.papel().name());
 
-        Usuario novoMembro = buscarUsuarioPorEmail(dto.emailUsuario());
+        Usuario novoMembro = buscarUsuarioPorEmailInformado(dto.emailUsuario());
 
         Projeto projeto = projetoRepository.findById(projetoId)
                 .orElseThrow(() -> new ProjetoNaoEncontradoException("Projeto não encontrado."));
 
         boolean jaEhMembro = projetoUsuarioRepository.existsByProjetoIdAndUsuarioId(projetoId, novoMembro.getId());
         if (jaEhMembro) {
-            throw new RuntimeException("Este usuário já é membro do projeto.");
+            throw new ConflitoException("Este usuário já é membro do projeto.");
         }
 
         String nomePapel = dto.papel().name();
         Papel papel = papelRepository.findByNome(nomePapel)
-                .orElseThrow(() -> new RuntimeException("Papel inexistente."));
+                .orElseThrow(() -> new IllegalStateException("Papel inexistente."));
 
         List<Permissao> permissoesDoNovoMembro = new ArrayList<>(papel.getPermissoes());
 
@@ -205,7 +209,7 @@ public class ProjetoService {
                 findByProjetoIdAndUsuarioId(projetoId, membroSolicitante.getId())
                 .orElseThrow(() -> new UsuarioException("Usuario não encontrado"));
 
-        Usuario membroAlvo = buscarUsuarioPorEmail(dto.emailMembro());
+        Usuario membroAlvo = buscarUsuarioPorEmailInformado(dto.emailMembro());
         ProjetoUsuario projetoUsuarioAlvo = projetoUsuarioRepository.findByProjetoIdAndUsuarioId(projetoId, membroAlvo.getId())
                 .orElseThrow(() -> new UsuarioException("Usuário não está no projeto."));
 
@@ -285,9 +289,16 @@ public class ProjetoService {
             throw new PermissaoNegadaException("Somente o gerente pode fazer isso.");
     }
 
+    // Usuário do token (quem tá fazendo a requisição)
     private Usuario buscarUsuarioPorEmail(String email) {
         return usuarioRepository.findByEmail(email)
-                .orElseThrow(() -> new UsuarioException("Usuário autenticado não encontrado."));
+                .orElseThrow(SessaoInvalidaException::new);
+    }
+
+    // Usuário informado no corpo da requisição
+    private Usuario buscarUsuarioPorEmailInformado(String email) {
+        return usuarioRepository.findByEmail(email)
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Nenhum usuário cadastrado com este e-mail."));
     }
 
     private ProjetoResponseDTO converterParaDTO(Projeto projeto) {
@@ -351,7 +362,7 @@ public class ProjetoService {
         // so troca papel e permissoes se o papel realmente mudou
         if (papelDesejado != null && !papelDesejado.equalsIgnoreCase(papelAtual)) {
             Papel novoPapel = papelRepository.findByNome(papelDesejado)
-                    .orElseThrow(() -> new RuntimeException("Papel inexistente."));
+                    .orElseThrow(() -> new IllegalStateException("Papel inexistente."));
             List<Permissao> novasPermissoes = new ArrayList<>(novoPapel.getPermissoes());
             usuarioAlvo.setPapel(novoPapel);
             usuarioAlvo.getPermissoes().clear();

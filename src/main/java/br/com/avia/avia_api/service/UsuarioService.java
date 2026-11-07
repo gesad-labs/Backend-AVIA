@@ -3,6 +3,8 @@ package br.com.avia.avia_api.service;
 import br.com.avia.avia_api.dto.usuario.AtualizarUsuarioRequestDTO;
 import br.com.avia.avia_api.dto.usuario.UsuarioResponse;
 import br.com.avia.avia_api.entity.Usuario;
+import br.com.avia.avia_api.exception.RequisicaoInvalidaException;
+import br.com.avia.avia_api.exception.SessaoInvalidaException;
 import br.com.avia.avia_api.repository.UsuarioRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -43,7 +45,7 @@ public class UsuarioService {
 
         if (request.novaSenha() != null && !request.novaSenha().isBlank()) {
             if (request.senhaAtual() == null || request.senhaAtual().isBlank()) {
-                throw new RuntimeException("Informe a senha atual");
+                throw new RequisicaoInvalidaException("Informe a senha atual.");
             }
 
             boolean senhaCorreta = passwordEncoder.matches(
@@ -52,7 +54,7 @@ public class UsuarioService {
             );
 
             if (!senhaCorreta) {
-                throw new RuntimeException("Senha atual incorreta");
+                throw new RequisicaoInvalidaException("Senha atual incorreta.");
             }
 
             usuario.setSenha(passwordEncoder.encode(request.novaSenha()));
@@ -69,6 +71,6 @@ public class UsuarioService {
 
     private Usuario buscarPorEmail(String email) {
         return usuarioRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
+                .orElseThrow(SessaoInvalidaException::new);
     }
 }
