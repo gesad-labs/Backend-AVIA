@@ -26,7 +26,7 @@ public class AuthExceptionHandler {
     public ResponseEntity<ErroResponseDTO> handleUsuarioNaoEncontrado(AuthenticationException ex) {
         return ResponseEntity
                 .status(HttpStatus.UNAUTHORIZED)
-                .body(new ErroResponseDTO("Credenciais inválidas"));
+                .body(new ErroResponseDTO("E-mail ou senha inválidos."));
 
     }
     @ExceptionHandler(EmailDuplicadoException.class)

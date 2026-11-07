@@ -115,6 +115,7 @@ public class GlobalExceptionHandler {
             case 404 -> "Recurso não encontrado.";
             case 405 -> "Método não permitido para este recurso.";
             case 409 -> "A operação entra em conflito com o estado atual dos dados.";
+            case 413 -> "O arquivo excede o tamanho máximo de 25 MB.";
             default -> "Não foi possível processar a requisição.";
         };
     }
