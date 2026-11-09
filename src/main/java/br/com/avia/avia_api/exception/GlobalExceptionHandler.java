@@ -78,7 +78,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErroResponseDTO> handleIntegridadeDosDados(DataIntegrityViolationException ex) {
         log.warn("Violação de integridade dos dados", ex);
         return erro(HttpStatus.CONFLICT,
-                "Não foi possível concluir a operação porque existem dados relacionados a este registro.");
+                "Não foi possível concluir a operação porque ela conflita com os dados existentes.");
     }
 
     // Evita que as exceções do Spring Security lançadas dentro do controller

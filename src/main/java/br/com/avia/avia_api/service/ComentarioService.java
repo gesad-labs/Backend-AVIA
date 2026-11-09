@@ -6,7 +6,6 @@ import br.com.avia.avia_api.entity.Comentario;
 import br.com.avia.avia_api.entity.ProjetoUsuario;
 import br.com.avia.avia_api.entity.Tarefa;
 import br.com.avia.avia_api.exception.RecursoNaoEncontradoException;
-import br.com.avia.avia_api.exception.RequisicaoInvalidaException;
 import br.com.avia.avia_api.exception.permissao.PermissaoNegadaException;
 import br.com.avia.avia_api.exception.tarefa.TarefaNaoEncontradaException;
 import br.com.avia.avia_api.exception.tarefa.TarefaNaoPertenceAoProjetoException;
@@ -86,7 +85,7 @@ public class ComentarioService {
         Comentario comentario = comentarioRepository.findById(comentarioId)
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Comentário não encontrado."));
         if (!comentario.getTarefaId().equals(tarefaId)) {
-            throw new RequisicaoInvalidaException("Comentário não pertence a essa tarefa.");
+            throw new RecursoNaoEncontradoException("Comentário não encontrado.");
         }
         comentarioRepository.delete(comentario);
     }
@@ -96,7 +95,7 @@ public class ComentarioService {
         Comentario comentario = comentarioRepository.findById(comentarioId)
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Comentário não encontrado."));
         if (!comentario.getTarefaId().equals(tarefaId)) {
-            throw new RequisicaoInvalidaException("Comentário não pertence a essa tarefa.");
+            throw new RecursoNaoEncontradoException("Comentário não encontrado.");
         }
         comentario.setDescricao(novaDescricao);
         return converterParaDTO(comentarioRepository.save(comentario));

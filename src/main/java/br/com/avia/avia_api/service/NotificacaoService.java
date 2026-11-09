@@ -114,7 +114,7 @@ public class NotificacaoService {
                                 projetoId,
                                 emailUsuario
                         )
-                        .orElseThrow(() -> new RecursoNaoEncontradoException("Notificação não encontrada neste projeto."));
+                        .orElseThrow(() -> new RecursoNaoEncontradoException("Notificação não encontrada."));
 
         notificacaoProjetoUsuario.marcarLida();
 

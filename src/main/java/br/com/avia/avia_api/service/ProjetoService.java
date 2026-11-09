@@ -298,7 +298,7 @@ public class ProjetoService {
     // Usuário informado no corpo da requisição
     private Usuario buscarUsuarioPorEmailInformado(String email) {
         return usuarioRepository.findByEmail(email)
-                .orElseThrow(() -> new RecursoNaoEncontradoException("Nenhum usuário cadastrado com este e-mail."));
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Usuario não encontrado"));
     }
 
     private ProjetoResponseDTO converterParaDTO(Projeto projeto) {
