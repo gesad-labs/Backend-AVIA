@@ -10,6 +10,9 @@ import br.com.avia.avia_api.entity.Tarefa;
 import br.com.avia.avia_api.entity.Usuario;
 import br.com.avia.avia_api.enums.CargoProjeto;
 import br.com.avia.avia_api.enums.StatusPlanningPokerSessao;
+import br.com.avia.avia_api.exception.ConflitoException;
+import br.com.avia.avia_api.exception.RecursoNaoEncontradoException;
+import br.com.avia.avia_api.exception.SessaoInvalidaException;
 import br.com.avia.avia_api.exception.permissao.PermissaoNegadaException;
 import br.com.avia.avia_api.exception.planningPoker.PlanningPokerException;
 import br.com.avia.avia_api.exception.tarefa.TarefaNaoEncontradaException;
@@ -73,7 +76,7 @@ public class PlanningPokerService {
                 );
 
         if (sessaoAtiva.isPresent()) {
-            throw new PlanningPokerException("Ja existe uma sessao ativa de planning poker para esta tarefa.");
+            throw new ConflitoException("Já existe uma sessão ativa de planning poker para esta tarefa.");
         }
 
         PlanningPokerSessao sessao = new PlanningPokerSessao(projetoId, tarefaId, usuario.getId());
@@ -122,7 +125,7 @@ public class PlanningPokerService {
         validarMembro(sessao.getProjetoId(), usuario);
 
         if (!StatusPlanningPokerSessao.VOTANDO.equals(sessao.getStatus())) {
-            throw new PlanningPokerException("A sessao nao esta aberta para votos.");
+            throw new PlanningPokerException("A sessão não está aberta para votos.");
         }
 
         PlanningPokerVoto voto = votoRepository
@@ -142,7 +145,7 @@ public class PlanningPokerService {
         validarGerente(sessao.getProjetoId(), usuario);
 
         if (!StatusPlanningPokerSessao.VOTANDO.equals(sessao.getStatus())) {
-            throw new PlanningPokerException("A sessao nao esta em votacao.");
+            throw new PlanningPokerException("A sessão não está em votação.");
         }
 
         sessao.setStatus(StatusPlanningPokerSessao.REVELADA);
@@ -158,7 +161,7 @@ public class PlanningPokerService {
         validarGerente(sessao.getProjetoId(), usuario);
 
         if (!StatusPlanningPokerSessao.REVELADA.equals(sessao.getStatus())) {
-            throw new PlanningPokerException("So e possivel iniciar nova rodada depois de revelar os votos.");
+            throw new PlanningPokerException("Só é possível iniciar uma nova rodada depois de revelar os votos.");
         }
 
         sessao.setStatus(StatusPlanningPokerSessao.VOTANDO);
@@ -179,7 +182,7 @@ public class PlanningPokerService {
         validarGerente(sessao.getProjetoId(), usuario);
 
         if (!StatusPlanningPokerSessao.REVELADA.equals(sessao.getStatus())) {
-            throw new PlanningPokerException("So e possivel finalizar depois de revelar os votos.");
+            throw new PlanningPokerException("Só é possível finalizar depois de revelar os votos.");
         }
 
         Tarefa tarefa = buscarTarefaDoProjeto(sessao.getProjetoId(), sessao.getTarefaId());
@@ -200,7 +203,7 @@ public class PlanningPokerService {
         validarGerente(sessao.getProjetoId(), usuario);
 
         if (StatusPlanningPokerSessao.FINALIZADA.equals(sessao.getStatus())) {
-            throw new PlanningPokerException("Nao e possivel cancelar uma sessao finalizada.");
+            throw new PlanningPokerException("Não é possível cancelar uma sessão finalizada.");
         }
 
         sessao.setStatus(StatusPlanningPokerSessao.CANCELADA);
@@ -210,12 +213,12 @@ public class PlanningPokerService {
 
     private PlanningPokerSessao buscarSessao(Long sessaoId) {
         return sessaoRepository.findById(sessaoId)
-                .orElseThrow(() -> new PlanningPokerException("Sessao de planning poker nao encontrada."));
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Sessão de planning poker não encontrada."));
     }
 
     private Usuario buscarUsuarioPorEmail(String email) {
         return usuarioRepository.findByEmail(email)
-                .orElseThrow(() -> new PlanningPokerException("Usuario autenticado nao encontrado."));
+                .orElseThrow(SessaoInvalidaException::new);
     }
 
     private Tarefa buscarTarefaDoProjeto(Long projetoId, Long tarefaId) {

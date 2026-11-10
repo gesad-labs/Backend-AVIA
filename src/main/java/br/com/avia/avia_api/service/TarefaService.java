@@ -3,6 +3,8 @@ package br.com.avia.avia_api.service;
 import br.com.avia.avia_api.dto.tarefa.*;
 import br.com.avia.avia_api.entity.*;
 import br.com.avia.avia_api.enums.StatusTarefa;
+import br.com.avia.avia_api.exception.RequisicaoInvalidaException;
+import br.com.avia.avia_api.exception.SessaoInvalidaException;
 import br.com.avia.avia_api.exception.permissao.PermissaoNegadaException;
 import br.com.avia.avia_api.exception.sprint.IntervaloSprintsInvalidoException;
 import br.com.avia.avia_api.exception.sprint.SprintNaoEncontradaException;
@@ -100,7 +102,7 @@ public class TarefaService {
         if (dto.responsaveisIds() != null) {
             for (Long uid : dto.responsaveisIds()) {
                 ProjetoUsuario pu = projetoUsuarioRepository.findByUsuarioIdAndProjetoId(uid, projetoId)
-                        .orElseThrow(() -> new RuntimeException("Membro não encontrado no projeto."));
+                        .orElseThrow(() -> new RequisicaoInvalidaException("Responsável informado não é membro do projeto."));
                 tarefaProjetoUsuarioRepository.save(new TarefaProjetoUsuario(tarefaSalva.getId(), pu.getId()));
             }
         }
@@ -210,7 +212,7 @@ public class TarefaService {
             tarefaProjetoUsuarioRepository.deleteByTarefaId(tarefaId);
             for (Long uid : dto.responsaveisIds()) {
                 ProjetoUsuario pu = projetoUsuarioRepository.findByUsuarioIdAndProjetoId(uid, projetoId)
-                        .orElseThrow(() -> new RuntimeException("Membro não encontrado no projeto."));
+                        .orElseThrow(() -> new RequisicaoInvalidaException("Responsável informado não é membro do projeto."));
                 tarefaProjetoUsuarioRepository.save(new TarefaProjetoUsuario(tarefaId, pu.getId()));
             }
         }
@@ -411,7 +413,7 @@ public class TarefaService {
 
     private Usuario buscarUsuarioPorEmail(String email) {
         return usuarioRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("Usuário autenticado não encontrado."));
+                .orElseThrow(SessaoInvalidaException::new);
     }
 
     private void verificarPermissao(Long projetoId, Long usuarioId, String... permissoesAceitas) {

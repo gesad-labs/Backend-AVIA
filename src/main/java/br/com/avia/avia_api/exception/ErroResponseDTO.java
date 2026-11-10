@@ -6,9 +6,9 @@ import java.util.List;
 import java.util.Map;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public record ErroResponseDTO(String menssagem, Map<String, List<String>> erros) {
+public record ErroResponseDTO(String mensagem, Map<String, List<String>> erros) {
 
-    public ErroResponseDTO(String menssagem){
-        this(menssagem, null);
+    public ErroResponseDTO(String mensagem){
+        this(mensagem, null);
     }
 }

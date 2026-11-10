@@ -3,6 +3,7 @@ package br.com.avia.avia_api.service;
 import br.com.avia.avia_api.dto.notificacao.NotificacaoResponseDTO;
 import br.com.avia.avia_api.entity.*;
 import br.com.avia.avia_api.enums.TipoNotificacao;
+import br.com.avia.avia_api.exception.RecursoNaoEncontradoException;
 import br.com.avia.avia_api.exception.projeto.ProjetoNaoEncontradoException;
 import br.com.avia.avia_api.repository.NotificacaoProjetoUsuarioRepository;
 import br.com.avia.avia_api.repository.NotificacaoRepository;
@@ -113,7 +114,7 @@ public class NotificacaoService {
                                 projetoId,
                                 emailUsuario
                         )
-                        .orElseThrow(() -> new RuntimeException("Notificação não encontrada neste projeto."));
+                        .orElseThrow(() -> new RecursoNaoEncontradoException("Notificação não encontrada."));
 
         notificacaoProjetoUsuario.marcarLida();
 

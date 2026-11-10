@@ -7,15 +7,18 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
 
 @RestControllerAdvice
+@Order(Ordered.HIGHEST_PRECEDENCE)
 public class AnexoExceptionHandler {
 
     @ExceptionHandler(TipoNaoPermitidoException.class)
     public ResponseEntity<ErroResponseDTO> tipoNaoPermitidoHandler(TipoNaoPermitidoException ex){
         return ResponseEntity
                 .status(HttpStatus.UNSUPPORTED_MEDIA_TYPE)
-                .body(new ErroResponseDTO("Tipo não permitido. Envie um Envie PDF, JPG, PNG ou DOCX"));
+                .body(new ErroResponseDTO("Tipo não permitido. Envie um PDF, JPG, PNG ou DOCX."));
     }
 
     @ExceptionHandler(AnexoNaoEncontradoException.class)
@@ -37,14 +40,14 @@ public class AnexoExceptionHandler {
     public ResponseEntity<ErroResponseDTO> handleArquivoMuitoGrande(ArquivoMuitoGrandeException ex) {
         return ResponseEntity
                 .status(HttpStatus.CONTENT_TOO_LARGE)
-                .body(new ErroResponseDTO(ex.getMessage()));
+                .body(new ErroResponseDTO("O arquivo excede o tamanho máximo de 25 MB."));
     }
 
     @ExceptionHandler(ArquivoVazioException.class)
     public ResponseEntity<ErroResponseDTO> handleArquivoVazio(ArquivoVazioException ex) {
         return ResponseEntity
-                .status(HttpStatus.NO_CONTENT)
-                .body(new ErroResponseDTO(ex.getMessage()));
+                .status(HttpStatus.BAD_REQUEST)
+                .body(new ErroResponseDTO("Nenhum arquivo enviado ou o arquivo está vazio."));
     }
 
     @ExceptionHandler(LimiteDeAnexoException.class)

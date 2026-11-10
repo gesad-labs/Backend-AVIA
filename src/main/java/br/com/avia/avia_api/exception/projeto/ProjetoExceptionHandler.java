@@ -2,6 +2,8 @@ package br.com.avia.avia_api.exception.projeto;
 
 import br.com.avia.avia_api.exception.ErroResponseDTO;
 import org.apache.coyote.Response;
+import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
@@ -9,6 +11,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 @RestControllerAdvice
+@Order(Ordered.HIGHEST_PRECEDENCE)
 public class ProjetoExceptionHandler {
 
     @ExceptionHandler(CargoException.class)
