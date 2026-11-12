@@ -130,10 +130,13 @@ public class TarefaService {
     }
 
     @Transactional
-    public List<TarefaResponseDTO> listarBacklog(Long projetoId, String status, String prioridade, String emailUsuario) {
+    public List<TarefaResponseDTO> listarBacklog(Long projetoId, String status, String prioridade,
+                                                 boolean incluirFuturas, String emailUsuario) {
         Usuario membro = buscarUsuarioPorEmail(emailUsuario);
         verificarPermissao(projetoId, membro.getId(), "VISUALIZARPROJETO");
-        List<Tarefa> tarefas = tarefaRepository.findByProjetoIdAndSprintIdIsNull(projetoId);
+        List<Tarefa> tarefas = incluirFuturas
+                ? tarefaRepository.buscarBacklogComSprintsNoStatus(projetoId, StatusSprint.EM_PLANEJAMENTO)
+                : tarefaRepository.findByProjetoIdAndSprintIdIsNull(projetoId);
         return tarefas.stream()
                 .filter(t -> status == null || t.getStatus().name().equalsIgnoreCase(status))
                 .filter(t -> prioridade == null || (t.getPrioridade() != null && t.getPrioridade().name().equalsIgnoreCase(prioridade)))
@@ -302,6 +305,8 @@ public class TarefaService {
         int subtarefasCount = tarefaRepository.countByTarefaParenteId(tarefa.getId());
         int subtarefasConcluidasCount = tarefaRepository.countByTarefaParenteIdAndStatus(tarefa.getId(), StatusTarefa.CONCLUIDA);
         int anexosCount = anexoRepository.countByTarefaId(tarefa.getId());
+        Sprint sprint = tarefa.getSprintId() == null ? null
+                : sprintRepository.findById(tarefa.getSprintId()).orElse(null);
 
         return new TarefaResponseDTO(
                 tarefa.getId(),
@@ -319,7 +324,9 @@ public class TarefaService {
                 tarefa.getTipo(),
                 subtarefasCount,
                 subtarefasConcluidasCount,
-                anexosCount
+                anexosCount,
+                sprint != null && sprint.getStatus() == StatusSprint.EM_PLANEJAMENTO,
+                sprint != null ? sprint.getNome() : null
         );
     }
 

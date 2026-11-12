@@ -41,11 +41,12 @@ public class TarefasController {
             @PathVariable Long projetoId,
             @RequestParam(required = false) String status,
             @RequestParam(required = false) String prioridade,
+            @RequestParam(defaultValue = "false") boolean incluirFuturas,
             @AuthenticationPrincipal Jwt jwt
     ) {
         String emailUsuario = jwt.getSubject();
         List<TarefaResponseDTO> tarefas =
-                tarefaService.listarBacklog(projetoId, status, prioridade, emailUsuario);
+                tarefaService.listarBacklog(projetoId, status, prioridade, incluirFuturas, emailUsuario);
         return ResponseEntity.ok(tarefas);
     }
 
