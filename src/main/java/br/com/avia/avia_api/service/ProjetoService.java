@@ -10,6 +10,7 @@ import br.com.avia.avia_api.exception.ConflitoException;
 import br.com.avia.avia_api.exception.RecursoNaoEncontradoException;
 import br.com.avia.avia_api.exception.RequisicaoInvalidaException;
 import br.com.avia.avia_api.exception.SessaoInvalidaException;
+import br.com.avia.avia_api.exception.auth.UsuarioNaoEncontradoException;
 import br.com.avia.avia_api.exception.permissao.PermissaoNegadaException;
 import br.com.avia.avia_api.exception.projeto.CargoException;
 import br.com.avia.avia_api.exception.projeto.ProjetoNaoEncontradoException;
@@ -64,7 +65,7 @@ public class ProjetoService {
         vinculoGerente.setPermissoes(permissoesGerente);
         projetoUsuarioRepository.save(vinculoGerente);
 
-        return converterParaDTO(projetoSalvo);
+        return converterParaDTO(projetoSalvo, PapelProjeto.GERENTE);
     }
 
     public ProjetoResponseDTO buscarPorId(Long projetoId, String emailUsuario) {
@@ -81,18 +82,22 @@ public class ProjetoService {
 
         Projeto projeto = projetoRepository.findById(projetoId)
                 .orElseThrow(() -> new ProjetoNaoEncontradoException("Projeto não encontrado."));
+        ProjetoUsuario projetoUsuario = projetoUsuarioRepository.findByUsuarioIdAndProjetoId(usuarioLogado.getId(), projetoId)
+                .orElseThrow(() -> new UsuarioNaoEncontradoException("Usuario não encontrado"));
 
-        return converterParaDTO(projeto);
+        return converterParaDTO(projeto, PapelProjeto.deString(projetoUsuario.getPapel().getNome()));
     }
 
     public List<ProjetoResponseDTO> listarProjetosDoUsuario(String emailUsuario) {
         Usuario usuarioLogado = buscarUsuarioPorEmail(emailUsuario);
 
-        List<Projeto> projetos = projetoUsuarioRepository.findProjetosByMembroId(usuarioLogado.getId());
+        List<ProjetoUsuario> vinculos = projetoUsuarioRepository.findProjetoUsuariosByProjetoEPapel(usuarioLogado.getId());
 
-        return projetos.stream()
-                .map(this::converterParaDTO)
-                .collect(Collectors.toList());
+        return vinculos.stream()
+                .map(v -> converterParaDTO(
+                        v.getProjeto(),
+                        PapelProjeto.deString(v.getPapel().getNome())))
+                .toList();
     }
 
     public List<MembroResponseDTO> listarMembrosDoProjeto(long idProjeto, String emailUsuario) {
@@ -159,7 +164,8 @@ public class ProjetoService {
         }
 
         Projeto projetoAtualizado = projetoRepository.save(projeto);
-        return converterParaDTO(projetoAtualizado);
+        // ja foi feita a verificação de papel GERENTE
+        return converterParaDTO(projetoAtualizado, PapelProjeto.GERENTE);
     }
 
     @Transactional
@@ -205,15 +211,12 @@ public class ProjetoService {
                 .orElseThrow(ProjetoNaoEncontradoException::new);
 
         Usuario membroSolicitante = buscarUsuarioPorEmail(emailSolicitante);
-        ProjetoUsuario usuarioSolicitante = projetoUsuarioRepository.
-                findByProjetoIdAndUsuarioId(projetoId, membroSolicitante.getId())
-                .orElseThrow(() -> new UsuarioException("Usuario não encontrado"));
 
         Usuario membroAlvo = buscarUsuarioPorEmailInformado(dto.emailMembro());
         ProjetoUsuario projetoUsuarioAlvo = projetoUsuarioRepository.findByProjetoIdAndUsuarioId(projetoId, membroAlvo.getId())
                 .orElseThrow(() -> new UsuarioException("Usuário não está no projeto."));
 
-        verificarGerente(projetoId, usuarioSolicitante);
+        validarPermissaoGerente(projetoId, membroSolicitante.getId());
         if (projetoUsuarioAlvo.getCargo() == CargoProjeto.GERENTE)
             verificarQuantidadeDeGerentes(projetoId);
 
@@ -301,11 +304,12 @@ public class ProjetoService {
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Usuario não encontrado"));
     }
 
-    private ProjetoResponseDTO converterParaDTO(Projeto projeto) {
+    private ProjetoResponseDTO converterParaDTO(Projeto projeto, PapelProjeto papelUsuario) {
         return new ProjetoResponseDTO(
                 projeto.getId(),
                 projeto.getNome(),
-                projeto.getTipoEstimativa());
+                projeto.getTipoEstimativa(),
+                papelUsuario);
     }
 
     private MembroResponseDTO converterMembroParaDTO(ProjetoUsuario pu) {
@@ -405,12 +409,6 @@ public class ProjetoService {
             throw new PermissaoNegadaException("Você não possui a permissão " + permissao.name() + " neste projeto.");
     }
 
-    private void verificarGerente(Long projetoId, ProjetoUsuario membro){
-        boolean ehGerente = membro.getCargo() == CargoProjeto.GERENTE;
-        if(!ehGerente){
-            throw new PermissaoNegadaException("Apenas gerentes podem executar essa ação.");
-        }
-    }
     private void verificarQuantidadeDeGerentes(Long projetoId){
         // aqui apenas verifica, se nao houver problema o metodo so termina,
         long numeroGerentesProjeto = projetoUsuarioRepository.countByProjeto_IdAndCargo(projetoId, CargoProjeto.GERENTE);
