@@ -20,5 +20,7 @@ public record TarefaResponseDTO(
         String tipo,
         Integer subtarefasCount,
         Integer subtarefasConcluidasCount,
-        Integer anexosCount
+        Integer anexosCount,
+        Boolean atividadeFutura,
+        String sprintNome
 ) {}

@@ -2,7 +2,9 @@ package br.com.avia.avia_api.service;
 
 import br.com.avia.avia_api.dto.tarefa.*;
 import br.com.avia.avia_api.entity.*;
+import br.com.avia.avia_api.enums.StatusSprint;
 import br.com.avia.avia_api.enums.StatusTarefa;
+import br.com.avia.avia_api.exception.ConflitoException;
 import br.com.avia.avia_api.exception.RequisicaoInvalidaException;
 import br.com.avia.avia_api.exception.SessaoInvalidaException;
 import br.com.avia.avia_api.exception.permissao.PermissaoNegadaException;
@@ -68,6 +70,7 @@ public class TarefaService {
             if (!Objects.equals(sprint.getProjetoId(), projetoId)) {
                 throw new SprintNaoPertenceAoProjetoException();
             }
+            validarSprintAberta(sprint);
         }
 
         if (tarefaParenteId != null) {
@@ -126,8 +129,10 @@ public class TarefaService {
     }
 
     @Transactional
-    public List<TarefaResponseDTO> listarBacklog(Long projetoId, String status, String prioridade) {
-        List<Tarefa> tarefas = tarefaRepository.findByProjetoIdAndSprintIdIsNull(projetoId);
+    public List<TarefaResponseDTO> listarBacklog(Long projetoId, String status, String prioridade, boolean incluirFuturas) {
+        List<Tarefa> tarefas = incluirFuturas
+                ? tarefaRepository.buscarBacklogComSprintsNoStatus(projetoId, StatusSprint.EM_PLANEJAMENTO)
+                : tarefaRepository.findByProjetoIdAndSprintIdIsNull(projetoId);
         return tarefas.stream()
                 .filter(t -> status == null || t.getStatus().name().equalsIgnoreCase(status))
                 .filter(t -> prioridade == null || (t.getPrioridade() != null && t.getPrioridade().name().equalsIgnoreCase(prioridade)))
@@ -249,12 +254,21 @@ public class TarefaService {
         Tarefa tarefa = buscarTarefaDoProjeto(projetoId, tarefaId);
 
         Long sprintId = dto.sprintId();
+        if (Objects.equals(sprintId, tarefa.getSprintId())) {
+            return converterParaDTO(tarefa);
+        }
+
+        if (tarefa.getStatus() == StatusTarefa.CONCLUIDA && pertenceASprintConcluida(tarefa)) {
+            throw new ConflitoException("Atividades concluídas permanecem na sprint em que foram encerradas.");
+        }
+
         if (sprintId != null) {
             Sprint sprint = sprintRepository.findById(sprintId)
                     .orElseThrow(SprintNaoEncontradaException::new);
             if (!Objects.equals(sprint.getProjetoId(), projetoId)) {
                 throw new SprintNaoPertenceAoProjetoException();
             }
+            validarSprintAberta(sprint);
         }
 
         tarefa.setSprintId(sprintId);
@@ -283,6 +297,8 @@ public class TarefaService {
         int subtarefasCount = tarefaRepository.countByTarefaParenteId(tarefa.getId());
         int subtarefasConcluidasCount = tarefaRepository.countByTarefaParenteIdAndStatus(tarefa.getId(), StatusTarefa.CONCLUIDA);
         int anexosCount = anexoRepository.countByTarefaId(tarefa.getId());
+        Sprint sprint = tarefa.getSprintId() == null ? null
+                : sprintRepository.findById(tarefa.getSprintId()).orElse(null);
 
         return new TarefaResponseDTO(
                 tarefa.getId(),
@@ -300,7 +316,9 @@ public class TarefaService {
                 tarefa.getTipo(),
                 subtarefasCount,
                 subtarefasConcluidasCount,
-                anexosCount
+                anexosCount,
+                sprint != null && sprint.getStatus() == StatusSprint.EM_PLANEJAMENTO,
+                sprint != null ? sprint.getNome() : null
         );
     }
 
@@ -335,6 +353,9 @@ public class TarefaService {
         }
 
         boolean reabrindo = tarefa.getStatus() == StatusTarefa.CONCLUIDA && !concluindo;
+        if (reabrindo && pertenceASprintConcluida(tarefa)) {
+            throw new ConflitoException("Não é possível reabrir uma atividade de uma sprint concluída.");
+        }
         if (reabrindo && tarefa.getTarefaParenteId() != null) {
             boolean paiConcluido = tarefaRepository.findById(tarefa.getTarefaParenteId())
                     .map(pai -> pai.getStatus() == StatusTarefa.CONCLUIDA)
@@ -401,6 +422,21 @@ public class TarefaService {
             throw new TarefaNaoPertenceAoProjetoException();
         }
         return tarefa;
+    }
+
+    private void validarSprintAberta(Sprint sprint) {
+        if (sprint.getStatus() == StatusSprint.CONCLUIDA) {
+            throw new ConflitoException("Não é possível adicionar atividades a uma sprint concluída.");
+        }
+    }
+
+    private boolean pertenceASprintConcluida(Tarefa tarefa) {
+        if (tarefa.getSprintId() == null) {
+            return false;
+        }
+        return sprintRepository.findById(tarefa.getSprintId())
+                .map(sprint -> sprint.getStatus() == StatusSprint.CONCLUIDA)
+                .orElse(false);
     }
 
     private void validarSprintDoProjeto(Long projetoId, Long sprintId) {
