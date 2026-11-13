@@ -2,6 +2,7 @@
 package br.com.avia.avia_api.controller;
 
 import br.com.avia.avia_api.dto.tarefa.*;
+import br.com.avia.avia_api.entity.Usuario;
 import br.com.avia.avia_api.enums.StatusTarefa;
 import br.com.avia.avia_api.service.TarefaService;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -42,8 +43,9 @@ public class TarefasController {
             @RequestParam(required = false) String prioridade,
             @AuthenticationPrincipal Jwt jwt
     ) {
+        String emailUsuario = jwt.getSubject();
         List<TarefaResponseDTO> tarefas =
-                tarefaService.listarBacklog(projetoId, status, prioridade);
+                tarefaService.listarBacklog(projetoId, status, prioridade, emailUsuario);
         return ResponseEntity.ok(tarefas);
     }
 
@@ -71,8 +73,9 @@ public class TarefasController {
             @PathVariable Long tarefaId,
             @AuthenticationPrincipal Jwt jwt
     ) {
+        String emailUsuario = jwt.getSubject();
         TarefaResponseDTO tarefa =
-                tarefaService.buscarTarefaPorId(projetoId, tarefaId);
+                tarefaService.buscarTarefaPorId(projetoId, tarefaId, emailUsuario);
         return ResponseEntity.ok(tarefa);
     }
 
@@ -96,8 +99,9 @@ public class TarefasController {
             @RequestParam(required = false) Long sprintId,
             @AuthenticationPrincipal Jwt jwt
     ) {
+        String emailUsuario = jwt.getSubject();
         List<TarefaResponseDTO> tarefas =
-                tarefaService.listarTarefasDoProjeto(projetoId, status, prioridade, sprintId);
+                tarefaService.listarTarefasDoProjeto(projetoId, status, prioridade, sprintId, emailUsuario);
 
         return ResponseEntity.ok(tarefas);
     }

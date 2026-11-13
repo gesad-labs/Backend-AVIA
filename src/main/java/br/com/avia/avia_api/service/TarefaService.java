@@ -3,6 +3,7 @@ package br.com.avia.avia_api.service;
 import br.com.avia.avia_api.dto.tarefa.*;
 import br.com.avia.avia_api.entity.*;
 import br.com.avia.avia_api.enums.StatusTarefa;
+import br.com.avia.avia_api.exception.auth.UsuarioNaoEncontradoException;
 import br.com.avia.avia_api.exception.RequisicaoInvalidaException;
 import br.com.avia.avia_api.exception.SessaoInvalidaException;
 import br.com.avia.avia_api.exception.permissao.PermissaoNegadaException;
@@ -126,7 +127,9 @@ public class TarefaService {
     }
 
     @Transactional
-    public List<TarefaResponseDTO> listarBacklog(Long projetoId, String status, String prioridade) {
+    public List<TarefaResponseDTO> listarBacklog(Long projetoId, String status, String prioridade, String emailUsuario) {
+        Usuario membro = buscarUsuarioPorEmail(emailUsuario);
+        verificarPermissao(projetoId, membro.getId(), "VISUALIZARPROJETO");
         List<Tarefa> tarefas = tarefaRepository.findByProjetoIdAndSprintIdIsNull(projetoId);
         return tarefas.stream()
                 .filter(t -> status == null || t.getStatus().name().equalsIgnoreCase(status))
@@ -136,7 +139,9 @@ public class TarefaService {
     }
 
     @Transactional
-    public TarefaResponseDTO buscarTarefaPorId(Long projetoId, Long tarefaId) {
+    public TarefaResponseDTO buscarTarefaPorId(Long projetoId, Long tarefaId, String emailUsuario) {
+        Usuario membro = buscarUsuarioPorEmail(emailUsuario);
+        verificarPermissao(projetoId, membro.getId(), "VISUALIZARPROJETO");
         Tarefa tarefa = buscarTarefaDoProjeto(projetoId, tarefaId);
         return converterParaDTO(tarefa);
     }
@@ -155,7 +160,9 @@ public class TarefaService {
     }
 
     @Transactional
-    public List<TarefaResponseDTO> listarTarefasDoProjeto(Long projetoId, String status, String prioridade, Long sprintId) {
+    public List<TarefaResponseDTO> listarTarefasDoProjeto(Long projetoId, String status, String prioridade, Long sprintId, String emailUsuario) {
+        Usuario membro = buscarUsuarioPorEmail(emailUsuario);
+        verificarPermissao(projetoId, membro.getId(), "VISUALIZARPROJETO");
         List<Tarefa> tarefas = tarefaRepository.findByProjetoId(projetoId);
         return tarefas.stream()
                 .filter(t -> status == null || t.getStatus().name().equalsIgnoreCase(status))
@@ -414,6 +421,11 @@ public class TarefaService {
     private Usuario buscarUsuarioPorEmail(String email) {
         return usuarioRepository.findByEmail(email)
                 .orElseThrow(SessaoInvalidaException::new);
+    }
+
+    private void verificarPertencimentoAoProjeto(Usuario usuario, Long projetoId){
+        ProjetoUsuario pu = projetoUsuarioRepository.findByUsuarioIdAndProjetoId(usuario.getId(), projetoId)
+                .orElseThrow(PermissaoNegadaException::new);
     }
 
     private void verificarPermissao(Long projetoId, Long usuarioId, String... permissoesAceitas) {
