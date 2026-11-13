@@ -92,7 +92,7 @@ public class TarefaService {
         if (dto.bloqueadaPorId() != null) {
             tarefa.setBloqueadaPorId(dto.bloqueadaPorId());
             Tarefa predecessora = validarBloqueio(projetoId, tarefa);
-            if (dto.status() == StatusTarefa.FAZENDO && predecessora.getStatus() != StatusTarefa.CONCLUIDA) {
+            if (dto.status() != StatusTarefa.A_FAZER && predecessora.getStatus() != StatusTarefa.CONCLUIDA) {
                 throw new TarefaBloqueadaException(predecessora.getTitulo());
             }
         }
@@ -323,7 +323,7 @@ public class TarefaService {
     }
 
     private void validarTransicaoStatus(Tarefa tarefa, StatusTarefa novoStatus) {
-        if (novoStatus == StatusTarefa.FAZENDO && tarefa.getStatus() != StatusTarefa.FAZENDO) {
+        if (novoStatus != StatusTarefa.A_FAZER && novoStatus != tarefa.getStatus()) {
             buscarPredecessoraPendente(tarefa).ifPresent(predecessora -> {
                 throw new TarefaBloqueadaException(predecessora.getTitulo());
             });
