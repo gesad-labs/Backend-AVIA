@@ -19,7 +19,7 @@ public class SenhaForteValidator implements ConstraintValidator<SenhaForte, Stri
     public boolean isValid(String senha, ConstraintValidatorContext context) {
 
         // caso a senha for nulla deixamos o @NotNull tratar
-        if(senha == null)
+        if(senha == null || senha.isBlank())
             return true;
 
         List<String> erros = new ArrayList<>();
