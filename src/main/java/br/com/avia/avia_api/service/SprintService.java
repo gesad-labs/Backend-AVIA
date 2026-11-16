@@ -119,7 +119,7 @@ public class SprintService {
         if (atual == StatusSprint.EM_PLANEJAMENTO && novoStatus == StatusSprint.EM_ANDAMENTO) {
             validarInicio(sprint);
         } else if (atual == StatusSprint.EM_ANDAMENTO && novoStatus == StatusSprint.CONCLUIDA) {
-            validarEncerramento(sprint);
+            moverPendentes(sprint);
         } else if (atual == StatusSprint.CONCLUIDA) {
             throw new ConflitoException("Uma sprint concluída não pode ser reaberta.");
         } else if (atual == StatusSprint.EM_ANDAMENTO) {
@@ -135,14 +135,17 @@ public class SprintService {
         }
     }
 
-    private void validarEncerramento(Sprint sprint) {
-        long pendentes = tarefaRepository.countBySprintIdAndStatusNot(sprint.getId(), StatusTarefa.CONCLUIDA);
-        if (pendentes == 1) {
-            throw new ConflitoException("A sprint não pode ser encerrada: existe 1 atividade pendente.");
+    private void moverPendentes(Sprint sprint) {
+        List<Tarefa> pendentes = tarefaRepository.findBySprintIdAndStatusNot(sprint.getId(), StatusTarefa.CONCLUIDA);
+        if (pendentes.isEmpty()) {
+            return;
         }
-        if (pendentes > 1) {
-            throw new ConflitoException("A sprint não pode ser encerrada: existem " + pendentes + " atividades pendentes.");
-        }
+        Long destinoId = sprintRepository
+                .findFirstByProjetoIdAndStatusOrderByIdAsc(sprint.getProjetoId(), StatusSprint.EM_PLANEJAMENTO)
+                .map(Sprint::getId)
+                .orElse(null);
+        pendentes.forEach(tarefa -> tarefa.setSprintId(destinoId));
+        tarefaRepository.saveAll(pendentes);
     }
 
     private SprintResponseDTO converterParaDTO(Sprint sprint) {
