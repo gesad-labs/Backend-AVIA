@@ -119,6 +119,9 @@ public class TarefaService {
         Usuario membro = buscarUsuarioPorEmail(emailMembro);
         verificarPermissao(projetoId, membro.getId(), "EXCLUIRTAREFAS");
         Tarefa tarefa = buscarTarefaDoProjeto(projetoId, tarefaId);
+        if (pertenceASprintConcluida(tarefa)) {
+            throw new ConflitoException("Não é possível excluir uma atividade de uma sprint concluída.");
+        }
         if (tarefaRepository.existsByTarefaParenteId(tarefaId)) {
             throw new TarefaPossuiSubtarefasException();
         }
