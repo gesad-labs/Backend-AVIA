@@ -76,6 +76,9 @@ public class TarefaService {
 
         if (tarefaParenteId != null) {
             Tarefa pai = buscarTarefaDoProjeto(projetoId, tarefaParenteId);
+            if (pertenceASprintConcluida(pai)) {
+                throw new ConflitoException("Não é possível criar subtarefa em uma atividade de uma sprint concluída.");
+            }
             validarPai(pai, null, dto.status());
         }
 
@@ -119,7 +122,7 @@ public class TarefaService {
         Usuario membro = buscarUsuarioPorEmail(emailMembro);
         verificarPermissao(projetoId, membro.getId(), "EXCLUIRTAREFAS");
         Tarefa tarefa = buscarTarefaDoProjeto(projetoId, tarefaId);
-        if (pertenceASprintConcluida(tarefa)) {
+        if (pertenceASprintConcluida(tarefa) || subtarefaSemSprintDePaiConcluido(tarefa)) {
             throw new ConflitoException("Não é possível excluir uma atividade de uma sprint concluída.");
         }
         if (tarefaRepository.existsByTarefaParenteId(tarefaId)) {
@@ -452,6 +455,15 @@ public class TarefaService {
         }
         return sprintRepository.findById(tarefa.getSprintId())
                 .map(sprint -> sprint.getStatus() == StatusSprint.CONCLUIDA)
+                .orElse(false);
+    }
+
+    private boolean subtarefaSemSprintDePaiConcluido(Tarefa tarefa) {
+        if (tarefa.getSprintId() != null || tarefa.getTarefaParenteId() == null) {
+            return false;
+        }
+        return tarefaRepository.findById(tarefa.getTarefaParenteId())
+                .map(this::pertenceASprintConcluida)
                 .orElse(false);
     }
 
