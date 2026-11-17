@@ -226,6 +226,7 @@ public class TarefaService {
         if (mudaEstimativa && pertenceASprintConcluida(tarefa)) {
             throw new ConflitoException("Não é possível alterar a estimativa de uma atividade de uma sprint concluída.");
         }
+        validarVinculosEmSprintConcluida(tarefa, dto);
 
         if (dto.titulo() != null) tarefa.setTitulo(dto.titulo());
         if (dto.descricao() != null) tarefa.setDescricao(dto.descricao());
@@ -455,6 +456,35 @@ public class TarefaService {
         }
         return sprintRepository.findById(tarefa.getSprintId())
                 .map(sprint -> sprint.getStatus() == StatusSprint.CONCLUIDA)
+                .orElse(false);
+    }
+
+    private void validarVinculosEmSprintConcluida(Tarefa tarefa, EditarTarefaRequestDTO dto) {
+        Long paiAtual = tarefa.getTarefaParenteId();
+        Long novoPai = dto.tarefaParenteId() == null ? paiAtual
+                : (dto.tarefaParenteId() == -1L ? null : dto.tarefaParenteId());
+        Long novaPredecessora = dto.bloqueadaPorId() == null ? tarefa.getBloqueadaPorId()
+                : (dto.bloqueadaPorId() == -1L ? null : dto.bloqueadaPorId());
+
+        boolean mudaPai = !Objects.equals(novoPai, paiAtual);
+        boolean mudaPredecessora = !Objects.equals(novaPredecessora, tarefa.getBloqueadaPorId());
+        if (!mudaPai && !mudaPredecessora) {
+            return;
+        }
+
+        boolean cardFechado = pertenceASprintConcluida(tarefa) || subtarefaSemSprintDePaiConcluido(tarefa);
+        boolean paiFechado = mudaPai && (tarefaEmSprintConcluida(paiAtual) || tarefaEmSprintConcluida(novoPai));
+        if (cardFechado || paiFechado) {
+            throw new ConflitoException("Não é possível alterar os vínculos de uma atividade de uma sprint concluída.");
+        }
+    }
+
+    private boolean tarefaEmSprintConcluida(Long tarefaId) {
+        if (tarefaId == null) {
+            return false;
+        }
+        return tarefaRepository.findById(tarefaId)
+                .map(this::pertenceASprintConcluida)
                 .orElse(false);
     }
 
