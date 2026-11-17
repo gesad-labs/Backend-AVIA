@@ -10,6 +10,7 @@ import br.com.avia.avia_api.entity.Tarefa;
 import br.com.avia.avia_api.entity.Usuario;
 import br.com.avia.avia_api.enums.CargoProjeto;
 import br.com.avia.avia_api.enums.StatusPlanningPokerSessao;
+import br.com.avia.avia_api.enums.StatusSprint;
 import br.com.avia.avia_api.exception.ConflitoException;
 import br.com.avia.avia_api.exception.RecursoNaoEncontradoException;
 import br.com.avia.avia_api.exception.SessaoInvalidaException;
@@ -20,6 +21,7 @@ import br.com.avia.avia_api.exception.tarefa.TarefaNaoPertenceAoProjetoException
 import br.com.avia.avia_api.repository.PlanningPokerSessaoRepository;
 import br.com.avia.avia_api.repository.PlanningPokerVotoRepository;
 import br.com.avia.avia_api.repository.ProjetoUsuarioRepository;
+import br.com.avia.avia_api.repository.SprintRepository;
 import br.com.avia.avia_api.repository.TarefaRepository;
 import br.com.avia.avia_api.repository.UsuarioRepository;
 import org.springframework.stereotype.Service;
@@ -47,26 +49,30 @@ public class PlanningPokerService {
     private final TarefaRepository tarefaRepository;
     private final UsuarioRepository usuarioRepository;
     private final ProjetoUsuarioRepository projetoUsuarioRepository;
+    private final SprintRepository sprintRepository;
 
     public PlanningPokerService(
             PlanningPokerSessaoRepository sessaoRepository,
             PlanningPokerVotoRepository votoRepository,
             TarefaRepository tarefaRepository,
             UsuarioRepository usuarioRepository,
-            ProjetoUsuarioRepository projetoUsuarioRepository
+            ProjetoUsuarioRepository projetoUsuarioRepository,
+            SprintRepository sprintRepository
     ) {
         this.sessaoRepository = sessaoRepository;
         this.votoRepository = votoRepository;
         this.tarefaRepository = tarefaRepository;
         this.usuarioRepository = usuarioRepository;
         this.projetoUsuarioRepository = projetoUsuarioRepository;
+        this.sprintRepository = sprintRepository;
     }
 
     @Transactional
     public PlanningPokerSessaoResponseDTO criarSessao(Long projetoId, Long tarefaId, String emailUsuario) {
         Usuario usuario = buscarUsuarioPorEmail(emailUsuario);
         validarGerente(projetoId, usuario);
-        buscarTarefaDoProjeto(projetoId, tarefaId);
+        Tarefa tarefa = buscarTarefaDoProjeto(projetoId, tarefaId);
+        validarSprintAberta(tarefa);
 
         Optional<PlanningPokerSessao> sessaoAtiva =
                 sessaoRepository.findFirstByProjetoIdAndTarefaIdAndStatusInOrderByCriadoEmDesc(
@@ -186,6 +192,7 @@ public class PlanningPokerService {
         }
 
         Tarefa tarefa = buscarTarefaDoProjeto(sessao.getProjetoId(), sessao.getTarefaId());
+        validarSprintAberta(tarefa);
         tarefa.setEstimativa(estimativaFinal);
         tarefaRepository.save(tarefa);
 
@@ -209,6 +216,18 @@ public class PlanningPokerService {
         sessao.setStatus(StatusPlanningPokerSessao.CANCELADA);
 
         return converterParaResponse(sessaoRepository.save(sessao));
+    }
+
+    private void validarSprintAberta(Tarefa tarefa) {
+        if (tarefa.getSprintId() == null) {
+            return;
+        }
+        boolean concluida = sprintRepository.findById(tarefa.getSprintId())
+                .map(sprint -> sprint.getStatus() == StatusSprint.CONCLUIDA)
+                .orElse(false);
+        if (concluida) {
+            throw new ConflitoException("Não é possível estimar uma atividade de uma sprint concluída.");
+        }
     }
 
     private PlanningPokerSessao buscarSessao(Long sessaoId) {
