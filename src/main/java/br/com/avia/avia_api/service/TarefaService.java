@@ -216,6 +216,11 @@ public class TarefaService {
 
         Tarefa tarefa = buscarTarefaDoProjeto(projetoId, tarefaId);
 
+        boolean mudaEstimativa = dto.estimativa() != null && !Objects.equals(dto.estimativa(), tarefa.getEstimativa());
+        if (mudaEstimativa && pertenceASprintConcluida(tarefa)) {
+            throw new ConflitoException("Não é possível alterar a estimativa de uma atividade de uma sprint concluída.");
+        }
+
         if (dto.titulo() != null) tarefa.setTitulo(dto.titulo());
         if (dto.descricao() != null) tarefa.setDescricao(dto.descricao());
         if (dto.estimativa() != null) tarefa.setEstimativa(dto.estimativa());
