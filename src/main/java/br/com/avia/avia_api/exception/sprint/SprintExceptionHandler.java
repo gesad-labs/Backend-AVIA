@@ -5,8 +5,11 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
 
 @RestControllerAdvice
+@Order(Ordered.HIGHEST_PRECEDENCE)
 public class SprintExceptionHandler {
 
     @ExceptionHandler(SprintNaoEncontradaException.class)
@@ -25,6 +28,13 @@ public class SprintExceptionHandler {
 
     @ExceptionHandler(SprintNaoPertenceAoProjetoException.class)
     public ResponseEntity<ErroResponseDTO> handleSprintNaoPertenceAoProjeto(SprintNaoPertenceAoProjetoException ex) {
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(new ErroResponseDTO(ex.getMessage()));
+    }
+
+    @ExceptionHandler(IntervaloSprintsInvalidoException.class)
+    public ResponseEntity<ErroResponseDTO> handleIntervaloSprintsInvalido(IntervaloSprintsInvalidoException ex) {
         return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)
                 .body(new ErroResponseDTO(ex.getMessage()));

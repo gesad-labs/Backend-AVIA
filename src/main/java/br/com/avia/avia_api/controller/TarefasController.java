@@ -2,6 +2,8 @@
 package br.com.avia.avia_api.controller;
 
 import br.com.avia.avia_api.dto.tarefa.*;
+import br.com.avia.avia_api.entity.Usuario;
+import br.com.avia.avia_api.enums.StatusTarefa;
 import br.com.avia.avia_api.service.TarefaService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -39,10 +41,30 @@ public class TarefasController {
             @PathVariable Long projetoId,
             @RequestParam(required = false) String status,
             @RequestParam(required = false) String prioridade,
+            @RequestParam(defaultValue = "false") boolean incluirFuturas,
             @AuthenticationPrincipal Jwt jwt
     ) {
+        String emailUsuario = jwt.getSubject();
         List<TarefaResponseDTO> tarefas =
-                tarefaService.listarBacklog(projetoId, status, prioridade);
+                tarefaService.listarBacklog(projetoId, status, prioridade, incluirFuturas, emailUsuario);
+        return ResponseEntity.ok(tarefas);
+    }
+
+    @GetMapping("/{projetoId}/tarefas/historico")
+    public ResponseEntity<List<TarefaResponseDTO>> filtrarHistorico(
+            @PathVariable Long projetoId,
+            @RequestParam(required = false) List<Long> responsaveisIds,
+            @RequestParam(required = false) Long sprintInicioId,
+            @RequestParam(required = false) Long sprintFimId,
+            @RequestParam(required = false) List<StatusTarefa> status,
+            @RequestParam(required = false) Boolean impedimento,
+            @AuthenticationPrincipal Jwt jwt
+    ) {
+        String emailMembro = jwt.getSubject();
+        FiltroHistoricoDTO filtro =
+                new FiltroHistoricoDTO(responsaveisIds, sprintInicioId, sprintFimId, status, impedimento);
+        List<TarefaResponseDTO> tarefas =
+                tarefaService.filtrarHistorico(projetoId, filtro, emailMembro);
         return ResponseEntity.ok(tarefas);
     }
 
@@ -52,9 +74,22 @@ public class TarefasController {
             @PathVariable Long tarefaId,
             @AuthenticationPrincipal Jwt jwt
     ) {
+        String emailUsuario = jwt.getSubject();
         TarefaResponseDTO tarefa =
-                tarefaService.buscarTarefaPorId(projetoId, tarefaId);
+                tarefaService.buscarTarefaPorId(projetoId, tarefaId, emailUsuario);
         return ResponseEntity.ok(tarefa);
+    }
+
+    @GetMapping("/{projetoId}/tarefas/{tarefaId}/subtarefas")
+    public ResponseEntity<List<TarefaResponseDTO>> listarSubtarefas(
+            @PathVariable Long projetoId,
+            @PathVariable Long tarefaId,
+            @AuthenticationPrincipal Jwt jwt
+    ) {
+        String emailMembro = jwt.getSubject();
+        List<TarefaResponseDTO> subtarefas =
+                tarefaService.listarSubtarefas(projetoId, tarefaId, emailMembro);
+        return ResponseEntity.ok(subtarefas);
     }
 
     @GetMapping("/{projetoId}/tarefas")
@@ -65,8 +100,9 @@ public class TarefasController {
             @RequestParam(required = false) Long sprintId,
             @AuthenticationPrincipal Jwt jwt
     ) {
+        String emailUsuario = jwt.getSubject();
         List<TarefaResponseDTO> tarefas =
-                tarefaService.listarTarefasDoProjeto(projetoId, status, prioridade, sprintId);
+                tarefaService.listarTarefasDoProjeto(projetoId, status, prioridade, sprintId, emailUsuario);
 
         return ResponseEntity.ok(tarefas);
     }

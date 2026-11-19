@@ -5,8 +5,11 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
 
 @RestControllerAdvice
+@Order(Ordered.HIGHEST_PRECEDENCE)
 public class TarefaExceptionHandler {
 
     @ExceptionHandler(TarefaNaoEncontradaException.class)
@@ -20,6 +23,55 @@ public class TarefaExceptionHandler {
     public ResponseEntity<ErroResponseDTO> handleTarefaNaoPertenceAoProjeto(TarefaNaoPertenceAoProjetoException ex) {
         return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)
+                .body(new ErroResponseDTO(ex.getMessage()));
+    }
+
+    @ExceptionHandler(HierarquiaTarefaInvalidaException.class)
+    public ResponseEntity<ErroResponseDTO> handleHierarquiaTarefaInvalida(HierarquiaTarefaInvalidaException ex) {
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(new ErroResponseDTO(ex.getMessage()));
+    }
+
+    @ExceptionHandler(TarefaPaiConcluidaException.class)
+    public ResponseEntity<ErroResponseDTO> handleTarefaPaiConcluida(TarefaPaiConcluidaException ex) {
+        return ResponseEntity
+                .status(HttpStatus.CONFLICT)
+                .body(new ErroResponseDTO(ex.getMessage()));
+    }
+
+    @ExceptionHandler(SubtarefasPendentesException.class)
+    public ResponseEntity<ErroResponseDTO> handleSubtarefasPendentes(SubtarefasPendentesException ex) {
+        return ResponseEntity
+                .status(HttpStatus.CONFLICT)
+                .body(new ErroResponseDTO(ex.getMessage()));
+    }
+
+    @ExceptionHandler(TarefaPossuiSubtarefasException.class)
+    public ResponseEntity<ErroResponseDTO> handleTarefaPossuiSubtarefas(TarefaPossuiSubtarefasException ex) {
+        return ResponseEntity
+                .status(HttpStatus.CONFLICT)
+                .body(new ErroResponseDTO(ex.getMessage()));
+    }
+
+    @ExceptionHandler(DependenciaInvalidaException.class)
+    public ResponseEntity<ErroResponseDTO> handleDependenciaInvalida(DependenciaInvalidaException ex) {
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(new ErroResponseDTO(ex.getMessage()));
+    }
+
+    @ExceptionHandler(DependenciaCircularException.class)
+    public ResponseEntity<ErroResponseDTO> handleDependenciaCircular(DependenciaCircularException ex) {
+        return ResponseEntity
+                .status(HttpStatus.CONFLICT)
+                .body(new ErroResponseDTO(ex.getMessage()));
+    }
+
+    @ExceptionHandler(TarefaBloqueadaException.class)
+    public ResponseEntity<ErroResponseDTO> handleTarefaBloqueada(TarefaBloqueadaException ex) {
+        return ResponseEntity
+                .status(HttpStatus.CONFLICT)
                 .body(new ErroResponseDTO(ex.getMessage()));
     }
 }

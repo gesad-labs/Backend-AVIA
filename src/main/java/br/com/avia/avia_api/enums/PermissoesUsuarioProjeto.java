@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonValue;
 
 public enum PermissoesUsuarioProjeto {
     CRIARTAREFAS("Criar Tarefas"),
+    CRIARSUBTAREFAS("Criar Subtarefas"),
     EDITARTAREFAS("Editar Tarefas"),
     EXCLUIRTAREFAS("Excluir Tarefas"),
     MOVERTAREFAS("Mover Tarefas"),
@@ -12,8 +13,10 @@ public enum PermissoesUsuarioProjeto {
     EDITARESTRUTURA("Editar Estrutura"),
     GERENCIARSPRINTS("Gerenciar Sprints"),
     ADICIONARMEMBROS("Adicionar Membros"),
-    REMOVERMEMBROS("Remover Membros"),
-    VISUALIZARPROJETO("Visualizar Projeto"); 
+    // apenas gerentes podem remover
+//    REMOVERMEMBROS("Remover Membros"),
+    ATUALIZARPERMISSOES("Atualizar Permissoes"),
+    VISUALIZARPROJETO("Visualizar Projeto");
 
     private final String nome;
 

@@ -5,9 +5,14 @@ import br.com.avia.avia_api.dto.comentario.CriarComentarioRequestDTO;
 import br.com.avia.avia_api.entity.Comentario;
 import br.com.avia.avia_api.entity.ProjetoUsuario;
 import br.com.avia.avia_api.entity.Tarefa;
+import br.com.avia.avia_api.exception.RecursoNaoEncontradoException;
+import br.com.avia.avia_api.exception.permissao.PermissaoNegadaException;
+import br.com.avia.avia_api.exception.tarefa.TarefaNaoEncontradaException;
+import br.com.avia.avia_api.exception.tarefa.TarefaNaoPertenceAoProjetoException;
 import br.com.avia.avia_api.repository.ComentarioRepository;
 import br.com.avia.avia_api.repository.ProjetoUsuarioRepository;
 import br.com.avia.avia_api.repository.TarefaRepository;
+import br.com.avia.avia_api.repository.UsuarioRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 
@@ -25,39 +30,42 @@ public class ComentarioService {
     private final TarefaRepository tarefaRepository;
     private final ProjetoUsuarioRepository projetoUsuarioRepository;
     private final NotificacaoService notificacaoService;
+    private final UsuarioRepository usuarioRepository;
 
     public ComentarioService(ComentarioRepository comentarioRepository,
                              TarefaRepository tarefaRepository,
                              ProjetoUsuarioRepository projetoUsuarioRepository,
-                             NotificacaoService notificacaoService) {
+                             NotificacaoService notificacaoService,
+                             UsuarioRepository usuarioRepository) {
         this.comentarioRepository = comentarioRepository;
         this.tarefaRepository = tarefaRepository;
         this.projetoUsuarioRepository = projetoUsuarioRepository;
         this.notificacaoService = notificacaoService;
+        this.usuarioRepository = usuarioRepository;
     }
 
     @Transactional
     public ComentarioResponseDTO criarComentario(Long projetoId, Long tarefaId, CriarComentarioRequestDTO dto, String emailUsuario) {
         Tarefa tarefa = tarefaRepository.findById(tarefaId)
-                .orElseThrow(() -> new RuntimeException("Tarefa não encontrada"));
+                .orElseThrow(TarefaNaoEncontradaException::new);
 
         if (!Objects.equals(tarefa.getProjetoId(), projetoId)) {
-            throw new RuntimeException("Tarefa não pertence a esse projeto");
+            throw new TarefaNaoPertenceAoProjetoException();
         }
 
         ProjetoUsuario autor = projetoUsuarioRepository.findByProjetoIdAndUsuarioEmail(projetoId, emailUsuario)
-                .orElseThrow(() -> new RuntimeException("Usuário não é membro do projeto."));
+                .orElseThrow(PermissaoNegadaException::new);
 
         Comentario comentario = new Comentario(tarefaId, dto.descricao(), autor.getId());
         Comentario salvo = comentarioRepository.save(comentario);
-        notificarUsuariosMencionados(projetoId, salvo, obterEmailsMencionados(dto));
+        notificarUsuariosMencionados(salvo, projetoId, obterEmailsMencionados(dto));
 
         return converterParaDTO(salvo);
     }
 
     public List<ComentarioResponseDTO> listarComentarios(Long tarefaId) {
         tarefaRepository.findById(tarefaId)
-                .orElseThrow(() -> new RuntimeException("Tarefa não encontrada"));
+                .orElseThrow(TarefaNaoEncontradaException::new);
         return comentarioRepository.findByTarefaIdOrderByIdAsc(tarefaId)
                 .stream()
                 .map(this::converterParaDTO)
@@ -67,7 +75,7 @@ public class ComentarioService {
     @Transactional
     public ComentarioResponseDTO alterarFlag(Long comentarioId) {
         Comentario comentario = comentarioRepository.findById(comentarioId)
-                .orElseThrow(() -> new RuntimeException("Comentário não encontrado"));
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Comentário não encontrado."));
         comentario.setImpedimento(!comentario.isImpedimento());
         return converterParaDTO(comentarioRepository.save(comentario));
     }
@@ -75,9 +83,9 @@ public class ComentarioService {
     @Transactional
     public void deletarComentario(Long tarefaId, Long comentarioId) {
         Comentario comentario = comentarioRepository.findById(comentarioId)
-                .orElseThrow(() -> new RuntimeException("Comentário não encontrado"));
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Comentário não encontrado."));
         if (!comentario.getTarefaId().equals(tarefaId)) {
-            throw new RuntimeException("Comentário não pertence a essa tarefa");
+            throw new RecursoNaoEncontradoException("Comentário não encontrado.");
         }
         comentarioRepository.delete(comentario);
     }
@@ -85,9 +93,9 @@ public class ComentarioService {
     @Transactional
     public ComentarioResponseDTO editarComentario(Long tarefaId, Long comentarioId, String novaDescricao) {
         Comentario comentario = comentarioRepository.findById(comentarioId)
-                .orElseThrow(() -> new RuntimeException("Comentário não encontrado"));
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Comentário não encontrado."));
         if (!comentario.getTarefaId().equals(tarefaId)) {
-            throw new RuntimeException("Comentário não pertence a essa tarefa");
+            throw new RecursoNaoEncontradoException("Comentário não encontrado.");
         }
         comentario.setDescricao(novaDescricao);
         return converterParaDTO(comentarioRepository.save(comentario));
@@ -114,11 +122,12 @@ public class ComentarioService {
         return emails;
     }
 
-    private void notificarUsuariosMencionados(Long projetoId, Comentario comentario, Set<String> emailsMencionados) {
+    private void notificarUsuariosMencionados(Comentario comentario, Long projetoId, Set<String> emailsMencionados) {
+        // depois verificar se caso o usuario nao pertenca ao projeto, ele nao receba
         emailsMencionados.forEach(email ->
-                projetoUsuarioRepository.findByProjetoIdAndUsuarioEmail(projetoId, email)
-                        .ifPresent(projetoUsuario ->
-                                notificacaoService.notificarUsuarioMencionadoEmComentario(projetoUsuario, comentario))
+                usuarioRepository.findByEmail(email)
+                        .ifPresent(usuario ->
+                                notificacaoService.notificarUsuarioMencionadoEmComentario(usuario, projetoId, comentario))
         );
     }
 
