@@ -21,6 +21,7 @@ FROM eclipse-temurin:21-jre
 RUN useradd --system --uid 10001 --no-create-home avia
 WORKDIR /app
 COPY --from=build /app/app.jar app.jar
+RUN mkdir -p /app/uploads && chown avia:avia /app/uploads
 USER avia
 EXPOSE 8080
 ENTRYPOINT ["java", "-XX:MaxRAMPercentage=75", "-jar", "app.jar"]
