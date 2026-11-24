@@ -9,6 +9,7 @@ import br.com.avia.avia_api.exception.ConflitoException;
 import br.com.avia.avia_api.exception.RequisicaoInvalidaException;
 import br.com.avia.avia_api.exception.SessaoInvalidaException;
 import br.com.avia.avia_api.exception.permissao.PermissaoNegadaException;
+import br.com.avia.avia_api.exception.projeto.ProjetoNaoEncontradoException;
 import br.com.avia.avia_api.exception.sprint.IntervaloSprintsInvalidoException;
 import br.com.avia.avia_api.exception.sprint.SprintNaoEncontradaException;
 import br.com.avia.avia_api.exception.sprint.SprintNaoPertenceAoProjetoException;
@@ -35,6 +36,7 @@ public class TarefaService {
     private final SprintRepository sprintRepository;
     private final TarefaProjetoUsuarioRepository tarefaProjetoUsuarioRepository;
     private final AnexoRepository anexoRepository;
+    private final ProjetoRepository projetoRepository;
 
     public TarefaService(
             UsuarioRepository usuarioRepository,
@@ -42,14 +44,15 @@ public class TarefaService {
             TarefaRepository tarefaRepository,
             SprintRepository sprintRepository,
             TarefaProjetoUsuarioRepository tarefaProjetoUsuarioRepository,
-            AnexoRepository anexoRepository
-    ) {
+            AnexoRepository anexoRepository,
+            ProjetoRepository projetoRepository) {
         this.usuarioRepository = usuarioRepository;
         this.projetoUsuarioRepository = projetoUsuarioRepository;
         this.tarefaRepository = tarefaRepository;
         this.sprintRepository = sprintRepository;
         this.tarefaProjetoUsuarioRepository = tarefaProjetoUsuarioRepository;
         this.anexoRepository = anexoRepository;
+        this.projetoRepository = projetoRepository;
     }
 
     @Transactional
@@ -103,6 +106,10 @@ public class TarefaService {
                 throw new TarefaBloqueadaException(predecessora.getTitulo());
             }
         }
+
+        Projeto projeto = projetoRepository.buscarComLock(projetoId)
+                .orElseThrow(ProjetoNaoEncontradoException::new);
+        tarefa.setNumeroNoProjeto(projeto.consumirProximoNumeroTarefa());
 
         Tarefa tarefaSalva = tarefaRepository.save(tarefa);
 
@@ -322,6 +329,7 @@ public class TarefaService {
 
         return new TarefaResponseDTO(
                 tarefa.getId(),
+                tarefa.getNumeroNoProjeto(),
                 tarefa.getSprintId(),
                 tarefa.getTitulo(),
                 tarefa.getDescricao(),

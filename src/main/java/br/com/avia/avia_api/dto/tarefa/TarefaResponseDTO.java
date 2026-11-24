@@ -5,7 +5,9 @@ import br.com.avia.avia_api.enums.StatusTarefa;
 import java.util.List;
 
 public record TarefaResponseDTO(
+        // trocar esse id pelo id interno do projeto
         Long id,
+        Integer numeroTarefa,
         Long sprintId,
         String titulo,
         String descricao,
