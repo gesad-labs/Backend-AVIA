@@ -11,7 +11,12 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
-@Table(name = "tarefas")
+@Table(
+        name = "tarefas",
+        uniqueConstraints = @UniqueConstraint(
+                name = "uk_numero_tarefa_projeto",
+                columnNames = {"projeto_id", "numero_no_projeto"}
+        ))
 @Setter
 @Getter
 @NoArgsConstructor
@@ -25,6 +30,9 @@ public class Tarefa {
 
     @Column(name = "projeto_id")
     private Long projetoId;
+
+    @Column(name = "numero_no_projeto", nullable = false, updatable = false)
+    private Integer numeroNoProjeto;
 
     @Column(name = "sprint_id")
     private Long sprintId;
@@ -60,6 +68,7 @@ public class Tarefa {
     @Column(name = "tipo")
     private String tipo;
 
+    // acho que não é mais usado, talvez precise ser retirado, conferir se existe resquicios em prod
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "responsavel_id")
     private Usuario responsavel;

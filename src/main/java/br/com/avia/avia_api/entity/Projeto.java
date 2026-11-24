@@ -27,4 +27,9 @@ public class Projeto {
     @Column(name = "tipo_estimativa", nullable = false)
     private TipoEstimativaProjeto tipoEstimativa;
 
+    @Setter(AccessLevel.NONE)
+    @Column(name = "proximo_numero_tarefa", nullable = false)
+    private Integer proximoNumeroTarefa = 1;
+
+    public int consumirProximoNumeroTarefa(){ return proximoNumeroTarefa++;}
 }
